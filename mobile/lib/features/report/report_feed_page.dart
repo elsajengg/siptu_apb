@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'report_create_page.dart';
+import 'report_detail_page.dart';
+
 /// Model sederhana untuk laporan (feed/forum)
 class Report {
+  final String id;
   final String title;
   final String description;
   final String location;
@@ -12,8 +16,10 @@ class Report {
   final String staffName;
   final String staffFeedback;
   final DateTime createdAt;
+  final String? photoPath;
 
   Report({
+    required this.id,
     required this.title,
     required this.description,
     required this.location,
@@ -24,6 +30,7 @@ class Report {
     required this.staffName,
     required this.staffFeedback,
     required this.createdAt,
+    this.photoPath,
   });
 }
 
@@ -47,6 +54,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
     final r = _reports[index];
     setState(() {
       _reports[index] = Report(
+        id: r.id,
         title: r.title,
         description: r.description,
         location: r.location,
@@ -57,8 +65,19 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
         staffName: r.staffName,
         staffFeedback: r.staffFeedback,
         createdAt: r.createdAt,
+        photoPath: r.photoPath,
       );
     });
+  }
+
+  Future<void> _openCreate() async {
+    final created = await Navigator.of(context).push<Report>(
+      MaterialPageRoute(
+        builder: (_) => const ReportCreatePage(currentUser: 'mahasiswa_aktif'),
+      ),
+    );
+    if (created == null) return;
+    setState(() => _reports = [created, ..._reports]);
   }
 
   @override
@@ -66,7 +85,8 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red.shade800,
-        title: const Text('Forum Laporan'),
+        foregroundColor: Colors.white,
+        title: const Text('Pengaduan (Timeline)'),
       ),
       body: Column(
         children: [
@@ -87,9 +107,9 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.red.shade800,
-        onPressed: () => _comingSoon(context),
+        onPressed: _openCreate,
         icon: const Icon(Icons.add),
-        label: const Text('Buat Laporan'),
+        label: const Text('Buat Pengaduan'),
       ),
     );
   }
@@ -103,7 +123,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
         children: [
           const Expanded(
             child: Text(
-              'Konsep forum: laporan bisa dilihat pengguna lain dan mendapat dukungan (upvote).',
+              'Tampilan seperti timeline: semua pengaduan terlihat, bisa diklik untuk detail, dan pengguna lain bisa memberi dukungan.',
               style: TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ),
@@ -132,22 +152,6 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
       ),
     );
   }
-
-  void _comingSoon(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Buat Laporan'),
-        content: const Text('Form pelaporan (placeholder).'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _ReportCard extends StatelessWidget {
@@ -169,12 +173,17 @@ class _ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final time = _formatTime(report.createdAt);
     return InkWell(
-      onTap: () => _showDetail(context),
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => ReportDetailPage(report: report)),
+        );
+      },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
@@ -190,43 +199,71 @@ class _ReportCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: const Color(0xFFFEE2E2),
+                  foregroundColor: const Color(0xFF991B1B),
                   child: Text(
-                    report.title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    report.createdBy.trim().isEmpty
+                        ? '?'
+                        : report.createdBy.trim()[0].toUpperCase(),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    color: _statusColor(report.status).withOpacity(0.12),
-                  ),
-                  child: Text(
-                    report.status,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: _statusColor(report.status),
-                    ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              report.title,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            time,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.black45,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '@${report.createdBy} • ${report.category}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             Text(
               report.description,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             Row(
               children: [
                 Icon(Icons.place, size: 14, color: Colors.grey.shade600),
@@ -255,6 +292,24 @@ class _ReportCard extends StatelessWidget {
                     style: const TextStyle(fontSize: 11),
                   ),
                 ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: _statusColor(report.status)
+                        .withAlpha((0.10 * 255).round()),
+                  ),
+                  child: Text(
+                    report.status,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: _statusColor(report.status),
+                    ),
+                  ),
+                ),
                 const Spacer(),
                 IconButton(
                   onPressed: onLike,
@@ -266,90 +321,34 @@ class _ReportCard extends StatelessWidget {
                 ),
               ],
             ),
-            const Divider(height: 18),
-            if (report.staffFeedback.isNotEmpty)
+            if (report.staffFeedback.isNotEmpty) ...[
+              const Divider(height: 18),
               Text(
-                'Feedback staff: ${report.staffName}',
+                'Update staff: ${report.staffName}',
                 style: const TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   color: Color(0xFF166534),
                 ),
-              )
-            else
-              const Text(
-                'Belum ada feedback dari staff.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
               ),
+              const SizedBox(height: 2),
+              Text(
+                report.staffFeedback,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            ],
           ],
         ),
       ),
-    );
-  }
-
-  void _showDetail(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-                Text(
-                  report.title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(report.description),
-                const SizedBox(height: 12),
-                Text('Lokasi: ${report.location}'),
-                const SizedBox(height: 6),
-                Text('Kategori: ${report.category}'),
-                const SizedBox(height: 6),
-                Text('Status: ${report.status}'),
-                const SizedBox(height: 16),
-                const Divider(),
-                const SizedBox(height: 8),
-                const Text(
-                  'Feedback Staff',
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 6),
-                if (report.staffFeedback.isNotEmpty)
-                  Text('${report.staffName}\n${report.staffFeedback}')
-                else
-                  const Text('Belum ada feedback dari staff.'),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
 
 final List<Report> _dummyReports = [
   Report(
+    id: 'REP-20260406-193000',
     title: 'Lampu Koridor Gedung B Lantai 3 Mati',
     description:
         'Sejak dua hari terakhir, lampu di koridor lantai 3 Gedung B mati total. Koridor jadi gelap dan berisiko.',
@@ -364,6 +363,7 @@ final List<Report> _dummyReports = [
     createdAt: DateTime(2026, 4, 6, 19, 30),
   ),
   Report(
+    id: 'REP-20260405-091500',
     title: 'AC Ruang Kelas 204 Tidak Dingin',
     description:
         'AC di ruang 204 hanya mengeluarkan angin tanpa dingin, mengganggu kenyamanan belajar.',
@@ -377,6 +377,7 @@ final List<Report> _dummyReports = [
     createdAt: DateTime(2026, 4, 5, 9, 15),
   ),
   Report(
+    id: 'REP-20260403-144500',
     title: 'Kursi Rusak di Perpustakaan Utama',
     description:
         'Beberapa kursi di area baca lantai 2 perpustakaan tidak layak pakai (kaki patah).',
@@ -391,4 +392,10 @@ final List<Report> _dummyReports = [
     createdAt: DateTime(2026, 4, 3, 14, 45),
   ),
 ];
+
+String _formatTime(DateTime dt) {
+  final hh = dt.hour.toString().padLeft(2, '0');
+  final mm = dt.minute.toString().padLeft(2, '0');
+  return '$hh:$mm';
+}
 

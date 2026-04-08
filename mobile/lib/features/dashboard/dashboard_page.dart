@@ -159,57 +159,6 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Ringkasan Tiket Fasilitas',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Pantau status laporan yang masuk ke layanan fasilitas kampus.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: const Color(0xFFE5E7EB),
-          ),
-          child: Row(
-            children: const [
-              Icon(Icons.account_circle, size: 18, color: Colors.black54),
-              SizedBox(width: 6),
-              Text(
-                'Staff Fasilitas',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildSummaryCards(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -397,7 +346,7 @@ class DashboardPage extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: _tickets.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
+            separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final ticket = _tickets[index];
               return ListTile(
@@ -486,7 +435,7 @@ class _SummaryCard extends StatelessWidget {
                     const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: color.withOpacity(0.12),
+                  color: color.withAlpha((0.12 * 255).round()),
                 ),
                 child: Text(
                   label,
@@ -565,7 +514,7 @@ class _StatusPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: color.withOpacity(0.12),
+        color: color.withAlpha((0.12 * 255).round()),
       ),
       child: Text(
         status,
@@ -716,9 +665,11 @@ class _HeroStatPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.white.withAlpha((0.12 * 255).round()),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withOpacity(0.18)),
+        border: Border.all(
+          color: Colors.white.withAlpha((0.18 * 255).round()),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -852,8 +803,8 @@ class _ActionTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
-          color: color.withOpacity(0.08),
-          border: Border.all(color: color.withOpacity(0.18)),
+          color: color.withAlpha((0.08 * 255).round()),
+          border: Border.all(color: color.withAlpha((0.18 * 255).round())),
         ),
         child: Column(
           children: [
@@ -914,7 +865,7 @@ class _InsightCard extends StatelessWidget {
                     width: 34,
                     height: 34,
                     decoration: BoxDecoration(
-                      color: it.color.withOpacity(0.12),
+                      color: it.color.withAlpha((0.12 * 255).round()),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(it.icon, color: it.color, size: 18),
