@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../home/home_shell.dart';
 import '../admin/admin_home.dart';
+import '../staff/staff_home.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -34,6 +35,10 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const AdminHome()));
+    } else if (username.contains('staff')) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const StaffHome()));
     } else {
       Navigator.of(
         context,
@@ -229,7 +234,7 @@ class _LoginPageState extends State<LoginPage> {
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Gunakan "admin" pada username untuk masuk sebagai Admin.',
+                                'Gunakan "admin" atau "staff" pada username untuk masuk sesuai role.',
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: Colors.black54,
