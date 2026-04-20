@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../dashboard/dashboard_page.dart';
 import '../report/report_feed_page.dart';
+import '../report/notifications_page.dart';
+import '../report/history_page.dart';
+import '../auth/login_page.dart';
+import '../user/edit_profile.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -12,13 +15,17 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  String _userName = "Elsa Ajeng";
+  String _userEmail = "elsa@email.com";
+  String _userPhone = "+62 812 3456 7890";
 
   @override
   Widget build(BuildContext context) {
     final pages = [
-      DashboardPage(),
       const ReportFeedPage(),
-      const _ProfilePlaceholder(),
+      const HistoryPage(),
+      const NotificationsPage(),
+      _buildProfilePage(),
     ];
 
     return Scaffold(
@@ -31,11 +38,15 @@ class _HomeShellState extends State<HomeShell> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
-            label: 'Dashboard',
+            label: 'Laporan',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.forum_outlined),
-            label: 'Laporan',
+            icon: Icon(Icons.history_outlined),
+            label: 'Riwayat',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_outlined),
+            label: 'Notifikasi',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
@@ -45,22 +56,242 @@ class _HomeShellState extends State<HomeShell> {
       ),
     );
   }
-}
 
-class _ProfilePlaceholder extends StatelessWidget {
-  const _ProfilePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildProfilePage() {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
         backgroundColor: Colors.red.shade800,
-        title: const Text('Profil'),
+        title: const Text('Profil Saya'),
+        elevation: 0,
       ),
-      body: const Center(
-        child: Text('Halaman profil (placeholder)'),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            /// 🔴 HEADER MERAH
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 30),
+              decoration: BoxDecoration(
+                color: Colors.red.shade800,
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(20),
+                ),
+              ),
+              child: Column(
+                children: [
+                  /// 👤 FOTO
+                  const CircleAvatar(
+                    radius: 50,
+                    backgroundImage:
+                        NetworkImage("https://i.pravatar.cc/300"),
+                  ),
+                  const SizedBox(height: 12),
+
+                  /// 🧑 NAMA
+                  Text(
+                    _userName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+
+                  /// ✉️ EMAIL
+                  Text(
+                    _userEmail,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+
+                  /// 📱 PHONE
+                  Text(
+                    _userPhone,
+                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// 📊 STATISTIK
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  _ProfileStat(title: "Laporan", value: "12"),
+                  _ProfileStat(title: "Diproses", value: "5"),
+                  _ProfileStat(title: "Selesai", value: "7"),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            /// 📋 MENU
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Column(
+                children: [
+                  _menuItem(
+                    Icons.edit,
+                    "Edit Profil",
+                    () async {
+                      final result = await Navigator.of(context).push<Map>(
+                        MaterialPageRoute(
+                          builder: (_) => EditProfilePage(
+                            name: _userName,
+                            email: _userEmail,
+                            phone: _userPhone,
+                          ),
+                        ),
+                      );
+
+                      if (result != null && mounted) {
+                        setState(() {
+                          _userName = result["name"] ?? _userName;
+                          _userEmail = result["email"] ?? _userEmail;
+                          _userPhone = result["phone"] ?? _userPhone;
+                        });
+                      }
+                    },
+                  ),
+                  _menuItem(
+                    Icons.notifications,
+                    "Notifikasi",
+                    () => setState(() => _index = 2),
+                  ),
+                  _menuItem(
+                    Icons.history,
+                    "Riwayat Laporan",
+                    () => setState(() => _index = 1),
+                  ),
+                  _menuItem(
+                    Icons.settings,
+                    "Pengaturan",
+                    () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Fitur pengaturan akan segera tersedia'),
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 16),
+                  _menuItem(
+                    Icons.logout,
+                    "Logout",
+                    () => _showLogoutDialog(),
+                    isLogout: true,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Konfirmasi Logout'),
+        content: const Text('Apakah Anda yakin ingin keluar dari aplikasi?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
+            },
+            child: Text(
+              'Logout',
+              style: TextStyle(color: Colors.red.shade800),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🔧 MENU ITEM
+  Widget _menuItem(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool isLogout = false,
+  }) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: isLogout ? Colors.red : Colors.red.shade800,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: isLogout ? Colors.red : Colors.black87,
+          fontWeight: isLogout ? FontWeight.w600 : FontWeight.w500,
+        ),
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
     );
   }
 }
 
+class _ProfileStat extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const _ProfileStat({
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.red.shade800,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black54,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

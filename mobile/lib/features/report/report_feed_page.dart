@@ -12,7 +12,7 @@ class Report {
   final String category;
   final String status; // Menunggu, Diproses, Selesai
   final String createdBy;
-  final int likes;
+  final List<String> likedBy; // User IDs yang sudah support/like
   final String staffName;
   final String staffFeedback;
   final DateTime createdAt;
@@ -26,12 +26,32 @@ class Report {
     required this.category,
     required this.status,
     required this.createdBy,
-    required this.likes,
+    required this.likedBy,
     required this.staffName,
     required this.staffFeedback,
     required this.createdAt,
     this.photoPath,
   });
+
+  // Helper method untuk copy dengan likedBy yang baru
+  Report copyWith({List<String>? likedBy}) {
+    return Report(
+      id: id,
+      title: title,
+      description: description,
+      location: location,
+      category: category,
+      status: status,
+      createdBy: createdBy,
+      likedBy: likedBy ?? this.likedBy,
+      staffName: staffName,
+      staffFeedback: staffFeedback,
+      createdAt: createdAt,
+      photoPath: photoPath,
+    );
+  }
+
+  int get likes => likedBy.length;
 }
 
 class ReportFeedPage extends StatefulWidget {
@@ -43,6 +63,7 @@ class ReportFeedPage extends StatefulWidget {
 
 class _ReportFeedPageState extends State<ReportFeedPage> {
   late List<Report> _reports;
+  final String _currentUser = 'mahasiswa_aktif'; // Simulate current logged-in user
 
   @override
   void initState() {
@@ -52,21 +73,18 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
 
   void _like(int index) {
     final r = _reports[index];
+    final newLikedBy = List<String>.from(r.likedBy);
+
+    if (newLikedBy.contains(_currentUser)) {
+      // User sudah like, hapus (unlike)
+      newLikedBy.remove(_currentUser);
+    } else {
+      // User belum like, tambah
+      newLikedBy.add(_currentUser);
+    }
+
     setState(() {
-      _reports[index] = Report(
-        id: r.id,
-        title: r.title,
-        description: r.description,
-        location: r.location,
-        category: r.category,
-        status: r.status,
-        createdBy: r.createdBy,
-        likes: r.likes + 1,
-        staffName: r.staffName,
-        staffFeedback: r.staffFeedback,
-        createdAt: r.createdAt,
-        photoPath: r.photoPath,
-      );
+      _reports[index] = r.copyWith(likedBy: newLikedBy);
     });
   }
 
@@ -96,10 +114,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
               itemCount: _reports.length,
               itemBuilder: (context, i) {
-                return _ReportCard(
-                  report: _reports[i],
-                  onLike: () => _like(i),
-                );
+                return _ReportCard(report: _reports[i], onLike: () => _like(i));
               },
             ),
           ),
@@ -144,7 +159,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
                     fontWeight: FontWeight.w600,
                     color: Color(0xFFB91C1C),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -192,7 +207,7 @@ class _ReportCard extends StatelessWidget {
               color: Colors.black12,
               blurRadius: 6,
               offset: Offset(0, 3),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -281,8 +296,10 @@ class _ReportCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: const Color(0xFFF3F4F6),
@@ -294,12 +311,15 @@ class _ReportCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: _statusColor(report.status)
-                        .withAlpha((0.10 * 255).round()),
+                    color: _statusColor(
+                      report.status,
+                    ).withAlpha((0.10 * 255).round()),
                   ),
                   child: Text(
                     report.status,
@@ -311,13 +331,33 @@ class _ReportCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                IconButton(
-                  onPressed: onLike,
-                  icon: const Icon(Icons.thumb_up_alt_outlined, size: 18),
-                ),
-                Text(
-                  '${report.likes} dukungan',
-                  style: const TextStyle(fontSize: 12),
+                // Cek apakah user sudah like
+                StatefulBuilder(
+                  builder: (context, setButtonState) {
+                    final isLiked =
+                        report.likedBy.contains('mahasiswa_aktif');
+                    return Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {
+                            onLike();
+                            setButtonState(() {});
+                          },
+                          icon: Icon(
+                            isLiked
+                                ? Icons.thumb_up_alt
+                                : Icons.thumb_up_alt_outlined,
+                            size: 18,
+                            color: isLiked ? Colors.red.shade800 : null,
+                          ),
+                        ),
+                        Text(
+                          '${report.likes} dukungan',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -356,7 +396,7 @@ final List<Report> _dummyReports = [
     category: 'Penerangan',
     status: 'Diproses',
     createdBy: 'mahasiswa_2023',
-    likes: 32,
+    likedBy: ['mahasiswa_2024', 'dosen_01', 'mahasiswa_2025'],
     staffName: 'Pak Arif (Teknisi Listrik)',
     staffFeedback:
         'Tim sudah cek awal. Pergantian komponen dilakukan malam ini di luar jam kuliah.',
@@ -371,7 +411,7 @@ final List<Report> _dummyReports = [
     category: 'Kenyamanan Ruangan',
     status: 'Menunggu',
     createdBy: 'bima.putra',
-    likes: 18,
+    likedBy: ['mahasiswa_2024', 'mahasiswa_aktif'],
     staffName: '',
     staffFeedback: '',
     createdAt: DateTime(2026, 4, 5, 9, 15),
@@ -385,7 +425,7 @@ final List<Report> _dummyReports = [
     category: 'Furnitur',
     status: 'Selesai',
     createdBy: 'salsa_19',
-    likes: 25,
+    likedBy: ['mahasiswa_2023', 'mahasiswa_2024', 'mahasiswa_2025', 'dosen_01'],
     staffName: 'Bu Rina (Koordinator Perpus)',
     staffFeedback:
         'Sudah diganti 5 kursi. Mohon info lagi bila ada kursi lain yang rusak.',
@@ -398,4 +438,3 @@ String _formatTime(DateTime dt) {
   final mm = dt.minute.toString().padLeft(2, '0');
   return '$hh:$mm';
 }
-
