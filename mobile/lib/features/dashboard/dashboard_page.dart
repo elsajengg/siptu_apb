@@ -1,28 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Model sederhana untuk data laporan di dashboard
-class DashboardTicket {
-  final String id;
-  final String title;
-  final String category;
-  final String status; // Menunggu, Diproses, Selesai
-  final String requester;
-  final String lastUpdate;
+import 'ticket_models.dart';
 
-  DashboardTicket({
-    required this.id,
-    required this.title,
-    required this.category,
-    required this.status,
-    required this.requester,
-    required this.lastUpdate,
-  });
-}
+class AdminDashboardPage extends StatelessWidget {
+  AdminDashboardPage({super.key});
 
-class DashboardPage extends StatelessWidget {
-  DashboardPage({super.key});
-
-  final List<DashboardTicket> _tickets = _dummyTickets;
+  final List<IncomingTicket> _tickets = kIncomingTickets;
   static const double _phi = 1.61803398875;
 
   int get _total => _tickets.length;
@@ -40,7 +23,7 @@ class DashboardPage extends StatelessWidget {
         backgroundColor: Colors.red.shade800,
         elevation: 0,
         title: const Text(
-          'Dashboard Laporan',
+          'Dashboard Admin',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -96,7 +79,8 @@ class DashboardPage extends StatelessWidget {
               children: [
                 _SectionTitle(
                   title: 'Kontrol & Insight',
-                  subtitle: 'Filter cepat dan ringkasan aktivitas terbaru.',
+                  subtitle:
+                      'Ringkasan sistem untuk admin: verifikasi, penugasan, dan export.',
                 ),
                 const SizedBox(height: 10),
                 _buildFilterAndLegend(context),
@@ -196,7 +180,7 @@ class DashboardPage extends StatelessWidget {
               Icon(Icons.account_circle, size: 18, color: Colors.black54),
               SizedBox(width: 6),
               Text(
-                'Staff Fasilitas',
+                'Administrator',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
@@ -365,7 +349,7 @@ class DashboardPage extends StatelessWidget {
             child: Row(
               children: [
                 const Text(
-                  'Daftar Laporan Terbaru',
+                  'Semua laporan masuk',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
@@ -434,6 +418,29 @@ class DashboardPage extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    if (ticket.assignedTo != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Staff: ${ticket.assignedTo}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF2563EB),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 2),
+                      const Text(
+                        'Staff: belum ditugaskan',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.black38,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 trailing: _StatusPill(status: ticket.status),
@@ -668,7 +675,7 @@ class _HeroHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'ServiceDesk • Fasilitas Kampus',
+                      'Admin • ServiceDesk Kampus',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -677,7 +684,7 @@ class _HeroHeader extends StatelessWidget {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Tampilan dibuat lebih menarik + layout golden ratio (web).',
+                      'Monitoring semua tiket, penugasan staff, dan insight operasional.',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 12,
@@ -966,38 +973,3 @@ class _InsightItem {
   });
 }
 
-/// Data dummy tiket untuk dashboard
-final List<DashboardTicket> _dummyTickets = [
-  DashboardTicket(
-    id: 'TIK-202604-001',
-    title: 'Lampu Koridor Gedung B Lantai 3 Mati',
-    category: 'Penerangan',
-    status: 'Diproses',
-    requester: 'mahasiswa_2023',
-    lastUpdate: '06 Apr 2026 19:30',
-  ),
-  DashboardTicket(
-    id: 'TIK-202604-002',
-    title: 'AC Ruang Kelas 204 Tidak Dingin',
-    category: 'Kenyamanan Ruangan',
-    status: 'Menunggu',
-    requester: 'bima.putra',
-    lastUpdate: '05 Apr 2026 09:15',
-  ),
-  DashboardTicket(
-    id: 'TIK-202604-003',
-    title: 'Kursi Rusak di Perpustakaan Utama',
-    category: 'Furnitur',
-    status: 'Selesai',
-    requester: 'salsa_19',
-    lastUpdate: '03 Apr 2026 14:45',
-  ),
-  DashboardTicket(
-    id: 'TIK-202604-004',
-    title: 'Keran Air Bocor di Toilet Lantai 1',
-    category: 'Sanitasi',
-    status: 'Diproses',
-    requester: 'agung.pratama',
-    lastUpdate: '07 Apr 2026 08:10',
-  ),
-];

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../dashboard/dashboard_page.dart';
-import '../report/report_feed_page.dart';
+import '../report/pages/report_feed_page.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -16,7 +16,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      DashboardPage(),
+      AdminDashboardPage(),
       const ReportFeedPage(),
       const _ProfilePlaceholder(),
     ];

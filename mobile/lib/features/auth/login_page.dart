@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../home/home_shell.dart';
+import '../home/home_shell.dart';//import package home_shell
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -9,24 +9,25 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
+//class ini mengatur state (data & behavior) dari halaman login
 class _LoginPageState extends State<LoginPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _userCtrl = TextEditingController();
-  final _passCtrl = TextEditingController();
-  bool _obscure = true;
+  final _formKey = GlobalKey<FormState>();//GlobalKey untuk validasi form
+  final _userCtrl = TextEditingController();//Controller untuk input username/email
+  final _passCtrl = TextEditingController();//Controller untuk input password
+  bool _obscure = true;//variabel untuk visibility password
 
   @override
-  void dispose() {
+  void dispose() {//Membersihkan controller saat widget tidak dipakai lagi. wajib dipanggil untuk menghindari memory leak
     _userCtrl.dispose();
-    _passCtrl.dispose();
+    _passCtrl.dispose();  
     super.dispose();
   }
 
   void _login() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeShell()),
+    Navigator.of(context).pushReplacement(//Menavigasi ke halaman home_shell
+      MaterialPageRoute(builder: (_) => const HomeShell()),//MaterialPageRoute untuk navigasi ke halaman home_shell
     );
   }
 
@@ -152,7 +153,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Wajib diisi';
-                          if (v.length < 4) return 'Minimal 4 karakter';
+                          if (v.length < 4) return 'Minimal 4 karakter';//minimal 4 karakter
                           return null;
                         },
                       ),
