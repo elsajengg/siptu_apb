@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../home/home_shell.dart';//import package home_shell
+import '../home/home_shell.dart';
+import '../admin/admin_home.dart';
+import '../staff/staff_home.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -25,10 +28,23 @@ class _LoginPageState extends State<LoginPage> {
 
   void _login() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    final username = _userCtrl.text.trim().toLowerCase();
 
-    Navigator.of(context).pushReplacement(//Menavigasi ke halaman home_shell
-      MaterialPageRoute(builder: (_) => const HomeShell()),//MaterialPageRoute untuk navigasi ke halaman home_shell
-    );
+    // Jika username mengandung "admin" → masuk ke AdminHome
+    // Selain itu → masuk ke HomeShell (user biasa)
+    if (username.contains('admin')) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const AdminHome()));
+    } else if (username.contains('staff')) {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const StaffHome()));
+    } else {
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
+    }
   }
 
   @override
@@ -99,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                       color: Colors.black12,
                       blurRadius: 8,
                       offset: Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: Form(
@@ -143,7 +159,8 @@ class _LoginPageState extends State<LoginPage> {
                           prefixIcon: const Icon(Icons.lock_outline),
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
-                            onPressed: () => setState(() => _obscure = !_obscure),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
                             icon: Icon(
                               _obscure
                                   ? Icons.visibility_outlined
@@ -164,7 +181,9 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Fitur lupa password (placeholder).'),
+                                content: Text(
+                                  'Fitur lupa password (placeholder).',
+                                ),
                               ),
                             );
                           },
@@ -197,6 +216,35 @@ class _LoginPageState extends State<LoginPage> {
                           label: const Text('Login dengan SSO'),
                         ),
                       ),
+                      const SizedBox(height: 14),
+
+                      // Info login hint
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              size: 16,
+                              color: Colors.black45,
+                            ),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Gunakan "admin" atau "staff" pada username untuk masuk sesuai role.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.black54,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -214,4 +262,3 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
-
