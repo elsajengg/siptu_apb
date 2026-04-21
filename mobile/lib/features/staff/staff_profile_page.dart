@@ -15,7 +15,9 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final double bannerHeight = size.width / (_phi * 1.4);
+    final double bannerHeight = size.width / _phi;
+    final double avatarDiameter = bannerHeight / _phi;
+    final double avatarRadius = avatarDiameter / 2;
     final red = Colors.red.shade800;
 
     return Scaffold(
@@ -30,48 +32,43 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
               children: [
                 _buildBanner(bannerHeight, red),
                 Positioned(
-                  top: bannerHeight - (80 / _phi),
-                  child: _buildAvatar(red),
+                  top: bannerHeight - (avatarDiameter / (_phi * _phi)),
+                  child: _buildAvatar(avatarRadius, red),
                 ),
               ],
             ),
 
-            const SizedBox(height: 70),
+            SizedBox(height: avatarRadius * _phi),
 
             // ── Personal Info & Identity ───────────────────────────
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: 16 * _phi),
               child: Column(
                 children: [
-                  const Text(
+                  Text(
                     'Budi Santoso',
                     style: TextStyle(
-                      fontSize: 26,
+                      fontSize: 18 * _phi,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: -0.8,
+                      letterSpacing: -0.5,
+                      color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: 4 * _phi),
                   Text(
                     'Staff Teknisi Ahli • Fasilitas & Infrastruktur',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 8 * _phi,
                       color: Colors.grey.shade600,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 8 * _phi),
                   _buildIdentityChip(red),
                 ],
               ),
             ),
 
-            const SizedBox(height: 30 * _phi),
-
-            // ── Stats Row ──────────────────────────────────────────
-            _buildStatsGrid(),
-
-            const SizedBox(height: 30 * _phi),
 
             // ── Account & Information Section ──────────────────────
             _buildSectionHeader('Informasi Akun'),
@@ -88,13 +85,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                 subtitle: '+62 812-3456-7890',
                 onTap: () => _showTopup(context, 'Edit No. Telepon'),
               ),
-              _MenuTile(
-                icon: Icons.location_on_outlined,
-                title: 'Lokasi Kerja',
-                subtitle: 'Gedung Panambulai, Lantai Dasar',
-                onTap: () {},
-                showChevron: false,
-              ),
+
             ]),
 
             const SizedBox(height: 20 * _phi),
@@ -169,20 +160,24 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
     );
   }
 
-  Widget _buildAvatar(Color red) {
+  Widget _buildAvatar(double radius, Color red) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 4),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 15, offset: Offset(0, 8)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08), 
+            blurRadius: 20, 
+            offset: const Offset(0, 10)
+          ),
         ],
       ),
       child: CircleAvatar(
-        radius: 60,
-        backgroundColor: Colors.grey.shade200,
+        radius: radius,
+        backgroundColor: Colors.grey.shade100,
         child: ClipOval(
-          child: Icon(Icons.person, size: 70, color: red.withOpacity(0.5)),
+          child: Icon(Icons.person, size: radius * 1.2, color: red.withOpacity(0.4)),
         ),
       ),
     );
@@ -215,19 +210,6 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
     );
   }
 
-  Widget _buildStatsGrid() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _StatBox(label: 'Tugas', value: '142', icon: Icons.task_alt_rounded, color: Colors.blue),
-          _StatBox(label: 'Rating', value: '4.9', icon: Icons.star_rounded, color: Colors.amber),
-          _StatBox(label: 'Lama Kerja', value: '6th', icon: Icons.work_history_rounded, color: Colors.teal),
-        ],
-      ),
-    );
-  }
 
   Widget _buildSectionHeader(String title) {
     return Padding(
@@ -311,40 +293,6 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
   }
 }
 
-class _StatBox extends StatelessWidget {
-  final String label;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatBox({required this.label, required this.value, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, size: 24, color: color),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: Colors.grey.shade500, fontWeight: FontWeight.w500),
-        ),
-      ],
-    );
-  }
-}
 
 class _MenuTile extends StatelessWidget {
   final IconData icon;
@@ -397,18 +345,20 @@ class _MenuTile extends StatelessWidget {
 }
 
 class _BannerPainter extends CustomPainter {
+  static const double _phi = 1.61803398875;
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
+      ..color = Colors.white.withOpacity(0.06)
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(Offset(size.width * 0.85, size.height * 0.2), 60, paint);
-    canvas.drawCircle(Offset(size.width * 0.1, size.height * 0.7), 100, paint);
+    // Abstract circles based on phi
+    canvas.drawCircle(Offset(size.width * (1 / _phi), size.height * 0.1), size.width / (_phi * _phi), paint);
+    canvas.drawCircle(Offset(size.width * 0.1, size.height * 0.8), size.width / (_phi * 1.5), paint);
 
     final path = Path()
-      ..moveTo(0, size.height * 0.8)
-      ..quadraticBezierTo(size.width * 0.5, size.height * 0.9, size.width, size.height * 0.7)
+      ..moveTo(0, size.height * 0.75)
+      ..quadraticBezierTo(size.width / _phi, size.height * 0.95, size.width, size.height * 0.65)
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();

@@ -51,11 +51,6 @@ class _StaffHomeState extends State<StaffHome> {
 class _StaffDashboard extends StatelessWidget {
   const _StaffDashboard();
 
-  // Dummy data for Staff
-  static const int _totalTugas = 8;
-  static const int _tugasBaru = 2;
-  static const int _tugasProses = 3;
-  static const int _tugasSelesai = 3;
 
   static final List<Map<String, dynamic>> _myActiveTasks = [
     {
@@ -115,21 +110,12 @@ class _StaffDashboard extends StatelessWidget {
             _buildHeroCard(context, red),
             const SizedBox(height: 16),
 
-            // ── Quick Actions ─────────────────────────────────────
-            _buildQuickActions(red),
-            const SizedBox(height: 16),
 
-            // ── Summary Cards ──────────────────────────────
-            _buildSummaryGrid(),
-            const SizedBox(height: 16),
 
             // ── Daftar Tugas Aktif ─────────────────────────
             _buildTaskList(context, red),
             const SizedBox(height: 16),
 
-            // ── Highlight / Insight ──────────────────────────────
-            _buildInsightCard(),
-            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -204,76 +190,7 @@ class _StaffDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActions(Color red) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Aksi Cepat',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _QuickActionItem(
-                  icon: Icons.qr_code_scanner,
-                  color: red,
-                  label: 'Scan Lokasi',
-                  onTap: () {},
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _QuickActionItem(
-                  icon: Icons.edit_note,
-                  color: const Color(0xFF2563EB),
-                  label: 'Update Status',
-                  onTap: () {},
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _QuickActionItem(
-                  icon: Icons.report_problem_outlined,
-                  color: const Color(0xFFF97316),
-                  label: 'Lapor Kendala',
-                  onTap: () {},
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildSummaryGrid() {
-    return GridView.count(
-      crossAxisCount: 2,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.8,
-      children: const [
-        _StatCard(label: 'Total Tugas', value: '$_totalTugas', color: Color(0xFF2563EB)),
-        _StatCard(label: 'Tugas Baru', value: '$_tugasBaru', color: Color(0xFFF97316)),
-        _StatCard(label: 'Sedang Proses', value: '$_tugasProses', color: Color(0xFFEAB308)),
-        _StatCard(label: 'Tugas Selesai', value: '$_tugasSelesai', color: Color(0xFF16A34A)),
-      ],
-    );
-  }
 
   Widget _buildTaskList(BuildContext context, Color red) {
     return Container(
@@ -338,7 +255,12 @@ class _StaffDashboard extends StatelessWidget {
                   ),
                 ),
                 trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => UpdateStatusPage()),
+                  );
+                },
               );
             },
           ),
@@ -347,123 +269,9 @@ class _StaffDashboard extends StatelessWidget {
     );
   }
 
-  Widget _buildInsightCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.orange.shade100),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.lightbulb_outline, color: Colors.orange.shade800, size: 20),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Tips Kerja Efisien',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Ambil foto sebelum dan sesudah perbaikan untuk verifikasi yang lebih cepat.',
-                  style: TextStyle(fontSize: 11, color: Colors.black54),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
-class _QuickActionItem extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String label;
-  final VoidCallback onTap;
 
-  const _QuickActionItem({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color, size: 24),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-
-  const _StatCard({required this.label, required this.value, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            value,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: Colors.black54, fontWeight: FontWeight.w500),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _PriorityTag extends StatelessWidget {
   final String priority;

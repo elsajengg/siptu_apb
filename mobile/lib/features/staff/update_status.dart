@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class UpdateStatusPage extends StatefulWidget {
   const UpdateStatusPage({super.key});
@@ -8,20 +10,46 @@ class UpdateStatusPage extends StatefulWidget {
 }
 
 class _UpdateStatusPageState extends State<UpdateStatusPage> {
+  static const double _phi = 1.61803398875;
   String _selectedStatus = 'Diproses';
   final TextEditingController _noteController = TextEditingController();
+  final List<File> _images = [];
+  final ImagePicker _picker = ImagePicker();
 
   final List<String> _statuses = ['Menunggu', 'Diproses', 'Selesai', 'Terkendala'];
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(
+        source: source,
+        imageQuality: 70,
+      );
+      if (pickedFile != null) {
+        setState(() {
+          _images.add(File(pickedFile.path));
+        });
+      }
+    } catch (e) {
+      debugPrint("Error picking image: $e");
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _images.removeAt(index);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final red = Colors.red.shade800;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
         backgroundColor: red,
         elevation: 0,
+        centerTitle: false,
         title: const Text(
           'Update Status Tugas',
           style: TextStyle(
@@ -32,40 +60,36 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(16 * _phi),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Informasi Tugas',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
+            _buildSectionTitle('Informasi Tugas'),
+            SizedBox(height: 8 * _phi),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(12 * _phi),
               decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12 * _phi),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4)),
+                ],
               ),
               child: const Column(
                 children: [
                   _InfoRow(label: 'ID Tiket', value: '#TGS-001'),
-                  Divider(),
                   _InfoRow(label: 'Judul', value: 'Perbaikan AC Ruang 302'),
-                  Divider(),
-                  _InfoRow(label: 'Kategori', value: 'Kesejukan Ruangan'),
+                  _InfoRow(label: 'Kategori', value: 'Kesejukan Ruangan', isLast: true),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Pilih Status Baru',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
+            SizedBox(height: 20 * _phi),
+
+            _buildSectionTitle('Pilih Status Baru'),
+            SizedBox(height: 8 * _phi),
             Wrap(
-              spacing: 10,
+              spacing: 12,
+              runSpacing: 8,
               children: _statuses.map((status) {
                 final isSelected = _selectedStatus == status;
                 return ChoiceChip(
@@ -74,58 +98,152 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   onSelected: (selected) {
                     if (selected) setState(() => _selectedStatus = status);
                   },
-                  selectedColor: red.withOpacity(0.2),
+                  selectedColor: red.withOpacity(0.15),
+                  backgroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(color: isSelected ? red : Colors.grey.shade300),
+                  ),
                   labelStyle: TextStyle(
-                    color: isSelected ? red : Colors.black87,
+                    color: isSelected ? red : Colors.black54,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontSize: 13,
                   ),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'Catatan Perbaikan',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            SizedBox(height: 20 * _phi),
+
+            _buildSectionTitle('Dokumentasi Perbaikan'),
+            SizedBox(height: 8 * _phi),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildImageSourceButton(
+                    icon: Icons.camera_alt_outlined,
+                    label: 'Kamera',
+                    onTap: () => _pickImage(ImageSource.camera),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildImageSourceButton(
+                    icon: Icons.photo_library_outlined,
+                    label: 'Galeri',
+                    onTap: () => _pickImage(ImageSource.gallery),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
+            if (_images.isNotEmpty) ...[
+              SizedBox(height: 12 * _phi),
+              SizedBox(
+                height: 100,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _images.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(_images[index], width: 100, height: 100, fit: BoxFit.cover),
+                        ),
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: GestureDetector(
+                            onTap: () => _removeImage(index),
+                            child: CircleAvatar(
+                              radius: 12,
+                              backgroundColor: Colors.black54,
+                              child: const Icon(Icons.close, size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+            SizedBox(height: 20 * _phi),
+
+            _buildSectionTitle('Catatan Perbaikan'),
+            SizedBox(height: 8 * _phi),
             TextField(
               controller: _noteController,
               maxLines: 4,
               decoration: InputDecoration(
                 hintText: 'Tuliskan detail perbaikan yang dilakukan...',
-                hintStyle: const TextStyle(fontSize: 13),
+                hintStyle: const TextStyle(fontSize: 13, color: Colors.black26),
                 filled: true,
-                fillColor: Colors.grey.shade50,
+                fillColor: Colors.white,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
                 ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey.shade100),
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 24 * _phi),
+
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 54,
               child: ElevatedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Status berhasil diperbarui!')),
                   );
+                  Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: red,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 4,
+                  shadowColor: red.withOpacity(0.4),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: const Text(
                   'Simpan Perubahan',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: -0.2),
+    );
+  }
+
+  Widget _buildImageSourceButton({required IconData icon, required String label, required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: Colors.black54, size: 24),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54)),
           ],
         ),
       ),
@@ -136,19 +254,25 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
-  const _InfoRow({required this.label, required this.value});
+  final bool isLast;
+  const _InfoRow({required this.label, required this.value, this.isLast = false});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-        ],
-      ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            ],
+          ),
+        ),
+        if (!isLast) const Divider(height: 1),
+      ],
     );
   }
 }
