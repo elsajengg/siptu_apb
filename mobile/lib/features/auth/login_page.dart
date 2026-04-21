@@ -12,6 +12,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  static const Map<String, String> _dummyUserAccounts = {
+    'mahasiswa@siptu.test': 'user123',
+    'user1@siptu.test': 'user123',
+    'user2@siptu.test': 'user123',
+  };
+
   final _formKey = GlobalKey<FormState>();
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -28,9 +34,8 @@ class _LoginPageState extends State<LoginPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final username = _userCtrl.text.trim().toLowerCase();
+    final password = _passCtrl.text;
 
-    // Jika username mengandung "admin" → masuk ke AdminHome
-    // Selain itu → masuk ke HomeShell (user biasa)
     if (username.contains('admin')) {
       Navigator.of(
         context,
@@ -40,6 +45,15 @@ class _LoginPageState extends State<LoginPage> {
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const StaffHome()));
     } else {
+      final expectedPassword = _dummyUserAccounts[username];
+      if (expectedPassword == null || expectedPassword != password) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Akun user dummy tidak ditemukan atau password salah.'),
+          ),
+        );
+        return;
+      }
       Navigator.of(
         context,
       ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
@@ -224,22 +238,29 @@ class _LoginPageState extends State<LoginPage> {
                           color: const Color(0xFFF3F4F6),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: const Row(
+                        child: const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.info_outline,
-                              size: 16,
-                              color: Colors.black45,
-                            ),
-                            SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Gunakan "admin" atau "staff" pada username untuk masuk sesuai role.',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.black54,
-                                ),
+                            Text(
+                              'Dummy user (tanpa admin/staff):',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w700,
                               ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              'mahasiswa@siptu.test / user123',
+                              style: TextStyle(fontSize: 11, color: Colors.black54),
+                            ),
+                            Text(
+                              'user1@siptu.test / user123',
+                              style: TextStyle(fontSize: 11, color: Colors.black54),
+                            ),
+                            Text(
+                              'user2@siptu.test / user123',
+                              style: TextStyle(fontSize: 11, color: Colors.black54),
                             ),
                           ],
                         ),

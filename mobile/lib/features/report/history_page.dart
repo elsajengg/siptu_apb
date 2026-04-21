@@ -10,32 +10,10 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  late List<Report> _reports;
+  final String _currentUser = 'mahasiswa_aktif';
   String _selectedStatus = 'Semua';
 
-  @override
-  void initState() {
-    super.initState();
-    // Filter hanya laporan dari user saat ini (mahasiswa_aktif)
-    // Menggunakan data dari report feed
-    _reports = [
-      Report(
-        id: 'REP-20260406-193000',
-        title: 'Lampu Koridor Gedung B Lantai 3 Mati',
-        description:
-            'Sejak dua hari terakhir, lampu di koridor lantai 3 Gedung B mati total. Koridor jadi gelap dan berisiko.',
-        location: 'Gedung B, Lantai 3, Koridor Timur',
-        category: 'Penerangan',
-        status: 'Diproses',
-        createdBy: 'mahasiswa_aktif',
-        likedBy: ['mahasiswa_2024', 'dosen_01', 'mahasiswa_2025'],
-        staffName: 'Pak Arif (Teknisi Listrik)',
-        staffFeedback:
-            'Tim sudah cek awal. Pergantian komponen dilakukan malam ini di luar jam kuliah.',
-        createdAt: DateTime(2026, 4, 6, 19, 30),
-      ),
-    ];
-  }
+  List<Report> get _reports => ReportRepository.getByUser(_currentUser);
 
   List<Report> get _filteredReports {
     if (_selectedStatus == 'Semua') {

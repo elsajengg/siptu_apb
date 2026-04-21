@@ -18,6 +18,12 @@ class _HomeShellState extends State<HomeShell> {
   String _userName = "Elsa Ajeng";
   String _userEmail = "elsa@email.com";
   String _userPhone = "+62 812 3456 7890";
+  static const _tabMeta = <({IconData icon, String label})>[
+    (icon: Icons.dashboard_outlined, label: 'Laporan'),
+    (icon: Icons.history_outlined, label: 'Riwayat'),
+    (icon: Icons.notifications_outlined, label: 'Notifikasi'),
+    (icon: Icons.person_outline, label: 'Profil'),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -30,29 +36,21 @@ class _HomeShellState extends State<HomeShell> {
 
     return Scaffold(
       body: pages[_index],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (i) => setState(() => _index = i),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.red.shade800,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard_outlined),
-            label: 'Laporan',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history_outlined),
-            label: 'Riwayat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_outlined),
-            label: 'Notifikasi',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profil',
-          ),
-        ],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        backgroundColor: Colors.white,
+        indicatorColor: const Color(0xFFFEE2E2),
+        elevation: 3,
+        destinations: _tabMeta
+            .map(
+              (tab) => NavigationDestination(
+                icon: Icon(tab.icon),
+                selectedIcon: Icon(tab.icon, color: Colors.red.shade800),
+                label: tab.label,
+              ),
+            )
+            .toList(),
       ),
     );
   }

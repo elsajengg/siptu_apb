@@ -45,5 +45,11 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Aplikasi membutuhkan akses kamera untuk mengambil foto pengaduan.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Aplikasi membutuhkan akses galeri untuk memilih foto pengaduan.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Aplikasi dapat menyimpan hasil foto pengaduan ke galeri bila diperlukan.</string>
 </dict>
 </plist>

@@ -45,7 +45,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   final _locationCtrl = TextEditingController();
 
   late String _category;
-  XFile? _photo;
+  List<XFile> _photos = [];
   bool _submitting = false;
 
   @override
@@ -72,18 +72,41 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   Future<void> _pick(ImageSource source) async {
     final picker = ImagePicker();
     try {
-      final file = await picker.pickImage(
-        source: source,
-        maxWidth: 1440,
-        imageQuality: 85,
-      );
+      XFile? file;
+      if (source == ImageSource.gallery) {
+        final files = await picker.pickMultiImage(
+          maxWidth: 1440,
+          imageQuality: 85,
+        );
+        if (!mounted) return;
+        if (files.isEmpty) return;
+        setState(() {
+          _photos = [..._photos, ...files].take(6).toList();
+        });
+        return;
+      } else {
+        file = await picker.pickImage(
+          source: source,
+          maxWidth: 1440,
+          imageQuality: 85,
+        );
+      }
       if (!mounted) return;
-      setState(() => _photo = file);
+      if (file == null) return;
+      setState(() {
+        _photos = [..._photos, file!].take(6).toList();
+      });
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Gagal memilih foto: $e')));
+      ).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Gagal akses kamera/galeri. Pastikan izin sudah diaktifkan di pengaturan aplikasi.',
+          ),
+        ),
+      );
     }
   }
 
@@ -96,7 +119,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
     if (!mounted) return;
 
     // Generate the report object (mockup for now)
-    final report = Report(
+    final createdReport = Report(
       id: _makeId(),
       title: _titleCtrl.text.trim(),
       description: _descCtrl.text.trim(),
@@ -108,8 +131,9 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
       staffName: '',
       staffFeedback: '',
       createdAt: DateTime.now(),
-      photoPath: _photo?.path,
+      photoPaths: _photos.map((e) => e.path).toList(),
     );
+    ReportRepository.add(createdReport);
 
     // Instead of popping, navigate to success page
     Navigator.pushReplacement(
@@ -132,17 +156,17 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
     final red = Colors.red.shade800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: const Color(0xFFF8FAFC),
 
       body: Column(
         children: [
           /// 🔴 HEADER GRADIENT
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 50, 16, 20),
+            padding: const EdgeInsets.fromLTRB(16, 50, 16, 22),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.red.shade800, Colors.red.shade600],
+                colors: [Colors.red.shade900, Colors.red.shade700],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -157,12 +181,54 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  "Buat Pengaduan",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                const Expanded(
+                  child: Text(
+                    "Buat Pengaduan",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha((0.16 * 255).round()),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const Text(
+                    'Form Cepat',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Colors.black54),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "Gunakan galeri untuk pilih banyak foto sekaligus. Maksimal 6 foto per laporan.",
+                    style: TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ),
               ],
@@ -189,59 +255,48 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Row(
+                          children: [
+                            const Expanded(
+                              child: Text(
+                                "Form Pengaduan",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEEF2FF),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Text(
+                                "Step 1 dari 1",
+                                style: TextStyle(
+                                  color: Color(0xFF3730A3),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
                         const Text(
-                          "Isi Data Pengaduan",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                          "Isi data selengkap mungkin agar laporan lebih cepat ditindaklanjuti.",
+                          style: TextStyle(fontSize: 12, color: Colors.black54),
                         ),
-
                         const SizedBox(height: 16),
-
-                        /// NAMA
-                        _inputWrapper(
-                          child: TextFormField(
-                            controller: _namaCtrl,
-                            decoration: const InputDecoration(
-                              hintText: "Nama Lengkap",
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Icons.person),
-                            ),
-                          ),
+                        _sectionTitle(
+                          icon: Icons.report_problem_outlined,
+                          title: "Detail Pengaduan",
                         ),
-
-                        const SizedBox(height: 12),
-
-                        /// NIM
-                        _inputWrapper(
-                          child: TextFormField(
-                            controller: _nimCtrl,
-                            decoration: const InputDecoration(
-                              hintText: "NIM",
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Icons.badge),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        /// FAKULTAS
-                        _inputWrapper(
-                          child: TextFormField(
-                            controller: _fakultasCtrl,
-                            decoration: const InputDecoration(
-                              hintText: "Fakultas",
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Icons.school),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-                        const Divider(),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 10),
 
                         /// DROPDOWN
                         _inputWrapper(
@@ -276,7 +331,9 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                               prefixIcon: Icon(Icons.title),
                             ),
                             validator: (v) =>
-                                v!.isEmpty ? "Judul wajib diisi" : null,
+                                (v == null || v.isEmpty)
+                                    ? "Judul wajib diisi"
+                                    : null,
                           ),
                         ),
 
@@ -291,6 +348,10 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                               border: InputBorder.none,
                               prefixIcon: Icon(Icons.place),
                             ),
+                            validator: (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? "Lokasi wajib diisi"
+                                    : null,
                           ),
                         ),
 
@@ -306,10 +367,19 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                               hintText: "Deskripsi laporan...",
                               border: InputBorder.none,
                             ),
+                            validator: (v) =>
+                                (v == null || v.trim().isEmpty)
+                                    ? "Deskripsi wajib diisi"
+                                    : null,
                           ),
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
+                        _sectionTitle(
+                          icon: Icons.image_outlined,
+                          title: "Lampiran Foto",
+                        ),
+                        const SizedBox(height: 10),
 
                         /// FOTO BUTTON
                         Row(
@@ -329,20 +399,80 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                                 onTap: () => _pick(ImageSource.camera),
                               ),
                             ),
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF7ED),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(0xFFFED7AA),
+                                ),
+                              ),
+                              child: Text(
+                                '${_photos.length}/6',
+                                style: const TextStyle(
+                                  color: Color(0xFFC2410C),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
 
                         const SizedBox(height: 12),
 
                         /// PREVIEW FOTO
-                        if (_photo != null)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.file(
-                              File(_photo!.path),
-                              height: 150,
-                              width: double.infinity,
-                              fit: BoxFit.cover,
+                        if (_photos.isNotEmpty)
+                          SizedBox(
+                            height: 96,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _photos.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(width: 8),
+                              itemBuilder: (_, i) {
+                                return Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Image.file(
+                                        File(_photos[i].path),
+                                        width: 120,
+                                        height: 96,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 4,
+                                      right: 4,
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            _photos.removeAt(i);
+                                          });
+                                        },
+                                        child: Container(
+                                          decoration: const BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: Colors.black54,
+                                          ),
+                                          padding: const EdgeInsets.all(4),
+                                          child: const Icon(
+                                            Icons.close,
+                                            size: 14,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
 
@@ -360,9 +490,13 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                               ),
                             ),
                             onPressed: _submit,
-                            child: const Text(
-                              "Kirim Pengaduan",
-                              style: TextStyle(fontSize: 16),
+                            child: Text(
+                              _submitting ? "Mengirim..." : "Kirim Pengaduan",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFFFFFFCC),
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
                         ),
@@ -393,8 +527,9 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F2F6),
+        color: const Color(0xFFF8FAFC),
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: child,
     );
@@ -410,8 +545,36 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
       icon: Icon(icon),
       label: Text(text),
       style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Color(0xFFCBD5E1)),
+        foregroundColor: const Color(0xFF0F172A),
+        backgroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
+    );
+  }
+
+  Widget _sectionTitle({required IconData icon, required String title}) {
+    return Row(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEEF2FF),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: const Color(0xFF3730A3)),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }

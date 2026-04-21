@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:io';
 
 import 'report_create_page.dart';
 import 'report_detail_page.dart';
@@ -16,7 +18,7 @@ class Report {
   final String staffName;
   final String staffFeedback;
   final DateTime createdAt;
-  final String? photoPath;
+  final List<String> photoPaths;
 
   Report({
     required this.id,
@@ -30,7 +32,7 @@ class Report {
     required this.staffName,
     required this.staffFeedback,
     required this.createdAt,
-    this.photoPath,
+    this.photoPaths = const [],
   });
 
   // Helper method untuk copy dengan likedBy yang baru
@@ -47,11 +49,33 @@ class Report {
       staffName: staffName,
       staffFeedback: staffFeedback,
       createdAt: createdAt,
-      photoPath: photoPath,
+      photoPaths: photoPaths,
     );
   }
 
   int get likes => likedBy.length;
+  String? get coverPhotoPath =>
+      photoPaths.isEmpty ? null : photoPaths.first;
+}
+
+class ReportRepository {
+  static final List<Report> _reports = List.of(_dummyReports);
+
+  static List<Report> getAll() => List.unmodifiable(_reports);
+
+  static void add(Report report) {
+    _reports.insert(0, report);
+  }
+
+  static void updateLikes(String id, List<String> likedBy) {
+    final index = _reports.indexWhere((r) => r.id == id);
+    if (index == -1) return;
+    _reports[index] = _reports[index].copyWith(likedBy: likedBy);
+  }
+
+  static List<Report> getByUser(String userId) {
+    return _reports.where((r) => r.createdBy == userId).toList();
+  }
 }
 
 class ReportFeedPage extends StatefulWidget {
@@ -68,7 +92,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
   @override
   void initState() {
     super.initState();
-    _reports = List.of(_dummyReports);
+    _reports = ReportRepository.getAll();
   }
 
   void _like(int index) {
@@ -86,20 +110,24 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
     setState(() {
       _reports[index] = r.copyWith(likedBy: newLikedBy);
     });
+    ReportRepository.updateLikes(r.id, newLikedBy);
   }
 
   Future<void> _openCreate() async {
-    final created = await Navigator.of(context).push<Report>(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => const ReportCreatePage(currentUser: 'mahasiswa_aktif'),
       ),
     );
-    if (created == null) return;
-    setState(() => _reports = [created, ..._reports]);
+    if (!mounted) return;
+    setState(() => _reports = ReportRepository.getAll());
   }
 
   @override
   Widget build(BuildContext context) {
+    final topReports = [..._reports]..sort((a, b) => b.likes.compareTo(a.likes));
+    final top3 = topReports.take(3).toList();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red.shade800,
@@ -108,7 +136,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
       ),
       body: Column(
         children: [
-          _buildHeader(),
+          _buildHeader(top3),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
@@ -129,38 +157,66 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(List<Report> top3) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      color: Colors.white,
-      child: Row(
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+      color: const Color(0xFFF8FAFC),
+      child: Column(
         children: [
-          const Expanded(
-            child: Text(
-              'Tampilan seperti timeline: semua pengaduan terlihat, bisa diklik untuk detail, dan pengguna lain bisa memberi dukungan.',
-              style: TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-          ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFFEE2E2),
-              borderRadius: BorderRadius.circular(20),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
             ),
             child: Row(
-              children: const [
-                Icon(Icons.trending_up, size: 16, color: Color(0xFFB91C1C)),
-                SizedBox(width: 4),
-                Text(
-                  'Trending',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFFB91C1C),
+              children: [
+                const Expanded(
+                  child: Text(
+                    'Pantau semua pengaduan, beri dukungan, dan lihat progress terbaru secara real-time.',
+                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.local_fire_department,
+                          size: 16, color: Color(0xFFB91C1C)),
+                      SizedBox(width: 4),
+                      Text(
+                        'Trending',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFB91C1C),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 122,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: top3.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 10),
+              itemBuilder: (_, i) {
+                final item = top3[i];
+                return _TopReportCard(report: item, rank: i + 1);
+              },
             ),
           ),
         ],
@@ -278,6 +334,10 @@ class _ReportCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 13, color: Color(0xFF4B5563)),
             ),
+            if ((report.coverPhotoPath ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 10),
+              _ReportPhoto(photoPath: report.coverPhotoPath!.trim()),
+            ],
             const SizedBox(height: 10),
             Row(
               children: [
@@ -386,6 +446,132 @@ class _ReportCard extends StatelessWidget {
   }
 }
 
+class _ReportPhoto extends StatelessWidget {
+  final String photoPath;
+
+  const _ReportPhoto({required this.photoPath});
+
+  @override
+  Widget build(BuildContext context) {
+    final isUrl = photoPath.startsWith('http://') || photoPath.startsWith('https://');
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: isUrl
+            ? Image.network(
+                photoPath,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _imageFallback(),
+              )
+            : (!kIsWeb
+                  ? Image.file(
+                      File(photoPath),
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _imageFallback(),
+                    )
+                  : _imageFallback()),
+      ),
+    );
+  }
+
+  Widget _imageFallback() {
+    return Container(
+      color: const Color(0xFFF3F4F6),
+      alignment: Alignment.center,
+      child: const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.broken_image_outlined, color: Colors.black38, size: 28),
+          SizedBox(height: 6),
+          Text(
+            'Foto tidak tersedia',
+            style: TextStyle(fontSize: 12, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TopReportCard extends StatelessWidget {
+  final Report report;
+  final int rank;
+
+  const _TopReportCard({required this.report, required this.rank});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 235,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        gradient: LinearGradient(
+          colors: [Colors.red.shade800, Colors.red.shade600],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.white.withAlpha((0.2 * 255).round()),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Top $rank',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              const Icon(Icons.thumb_up_alt_rounded,
+                  size: 16, color: Colors.white),
+              const SizedBox(width: 4),
+              Text(
+                '${report.likes}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            report.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            '@${report.createdBy}',
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 final List<Report> _dummyReports = [
   Report(
     id: 'REP-20260406-193000',
@@ -401,6 +587,10 @@ final List<Report> _dummyReports = [
     staffFeedback:
         'Tim sudah cek awal. Pergantian komponen dilakukan malam ini di luar jam kuliah.',
     createdAt: DateTime(2026, 4, 6, 19, 30),
+    photoPaths: const [
+      'https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
+    ],
   ),
   Report(
     id: 'REP-20260405-091500',
@@ -415,6 +605,9 @@ final List<Report> _dummyReports = [
     staffName: '',
     staffFeedback: '',
     createdAt: DateTime(2026, 4, 5, 9, 15),
+    photoPaths: const [
+      'https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&w=1200&q=80',
+    ],
   ),
   Report(
     id: 'REP-20260403-144500',
@@ -430,6 +623,10 @@ final List<Report> _dummyReports = [
     staffFeedback:
         'Sudah diganti 5 kursi. Mohon info lagi bila ada kursi lain yang rusak.',
     createdAt: DateTime(2026, 4, 3, 14, 45),
+    photoPaths: const [
+      'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80',
+    ],
   ),
 ];
 

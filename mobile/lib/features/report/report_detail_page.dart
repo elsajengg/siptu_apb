@@ -25,8 +25,8 @@ class ReportDetailPage extends StatelessWidget {
         children: [
           _HeaderCard(report: report, createdAt: createdAt),
           const SizedBox(height: 12),
-          if (report.photoPath != null) _PhotoCard(path: report.photoPath!),
-          if (report.photoPath != null) const SizedBox(height: 12),
+          if (report.photoPaths.isNotEmpty) _PhotoCard(paths: report.photoPaths),
+          if (report.photoPaths.isNotEmpty) const SizedBox(height: 12),
           _BodyCard(report: report),
           const SizedBox(height: 12),
           _StaffCard(report: report),
@@ -133,14 +133,20 @@ class _HeaderCard extends StatelessWidget {
   }
 }
 
-class _PhotoCard extends StatelessWidget {
-  final String path;
+class _PhotoCard extends StatefulWidget {
+  final List<String> paths;
 
-  const _PhotoCard({required this.path});
+  const _PhotoCard({required this.paths});
+
+  @override
+  State<_PhotoCard> createState() => _PhotoCardState();
+}
+
+class _PhotoCardState extends State<_PhotoCard> {
+  int _currentIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    final file = File(path);
     return Container(
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
@@ -154,16 +160,86 @@ class _PhotoCard extends StatelessWidget {
           )
         ],
       ),
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: file.existsSync()
-            ? Image.file(file, fit: BoxFit.cover)
-            : Container(
-                color: const Color(0xFFF3F4F6),
-                alignment: Alignment.center,
-                child: const Text('Foto tidak ditemukan'),
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Stack(
+              children: [
+                PageView.builder(
+                  itemCount: widget.paths.length,
+                  onPageChanged: (index) =>
+                      setState(() => _currentIndex = index),
+                  itemBuilder: (context, index) {
+                    final path = widget.paths[index];
+                    if (path.startsWith('http://') || path.startsWith('https://')) {
+                      return Image.network(
+                        path,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => _fallback(),
+                      );
+                    }
+                    final file = File(path);
+                    if (!file.existsSync()) return _fallback();
+                    return Image.file(file, fit: BoxFit.cover);
+                  },
+                ),
+                if (widget.paths.length > 1)
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        'Geser foto ${_currentIndex + 1}/${widget.paths.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (widget.paths.length > 1)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(widget.paths.length, (index) {
+                  final isActive = index == _currentIndex;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    width: isActive ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: isActive ? Colors.red.shade700 : Colors.black26,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  );
+                }),
               ),
+            ),
+        ],
       ),
+    );
+  }
+
+  Widget _fallback() {
+    return Container(
+      color: const Color(0xFFF3F4F6),
+      alignment: Alignment.center,
+      child: const Text('Foto tidak ditemukan'),
     );
   }
 }
