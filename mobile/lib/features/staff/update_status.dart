@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'task_success_page.dart';
 
 class UpdateStatusPage extends StatefulWidget {
   const UpdateStatusPage({super.key});
@@ -198,10 +199,15 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
               height: 54,
               child: ElevatedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Status berhasil diperbarui!')),
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => TaskSuccessPage(
+                        taskId: '#TGS-001', 
+                        newStatus: _selectedStatus,
+                      ),
+                    ),
                   );
-                  Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: red,

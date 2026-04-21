@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'assigned_tasks.dart';
 import 'update_status.dart';
+import 'task_detail_page.dart';
 import 'staff_profile_page.dart';
 
 class StaffHome extends StatefulWidget {
@@ -256,10 +257,17 @@ class _StaffDashboard extends StatelessWidget {
                 ),
                 trailing: const Icon(Icons.chevron_right, color: Colors.black26),
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => UpdateStatusPage()),
-                  );
+                  if (task['status'] == 'Selesai') {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => TaskDetailPage(task: task)),
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => UpdateStatusPage()),
+                    );
+                  }
                 },
               );
             },

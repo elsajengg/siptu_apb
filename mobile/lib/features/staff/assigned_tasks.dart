@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'update_status.dart';
+import 'task_detail_page.dart';
 
 class AssignedTasksPage extends StatefulWidget {
   const AssignedTasksPage({super.key});
@@ -187,10 +188,17 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
                           ),
                         ),
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const UpdateStatusPage()),
-                          );
+                          if (task['status'] == 'Selesai') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => TaskDetailPage(task: task)),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const UpdateStatusPage()),
+                            );
+                          }
                         },
                       ),
                     );
