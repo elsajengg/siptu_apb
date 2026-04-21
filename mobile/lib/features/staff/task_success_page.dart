@@ -1,14 +1,19 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'task_detail_page.dart';
 
 class TaskSuccessPage extends StatelessWidget {
   final String taskId;
   final String newStatus;
+  final List<File>? images;
+  final String? note;
 
   const TaskSuccessPage({
     super.key,
     required this.taskId,
     required this.newStatus,
+    this.images,
+    this.note,
   });
 
   static const double _phi = 1.61803398875;
@@ -109,6 +114,8 @@ class TaskSuccessPage extends StatelessWidget {
                             'status': newStatus,
                             'location': 'Lokasi Terlampir',
                           },
+                          localImages: images,
+                          customNote: note,
                         ),
                       ),
                     );

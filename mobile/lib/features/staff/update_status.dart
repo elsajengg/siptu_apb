@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'task_success_page.dart';
+import '../../data/task_service.dart';
+import 'package:intl/intl.dart';
 
 class UpdateStatusPage extends StatefulWidget {
   const UpdateStatusPage({super.key});
@@ -199,12 +201,26 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
               height: 54,
               child: ElevatedButton(
                 onPressed: () {
+                  // Save to TaskService
+                  final newTask = CompletedTask(
+                    id: '#TGS-001',
+                    title: 'Perbaikan AC Ruang 302',
+                    location: 'Gedung Kuliah Utama, Lt 3',
+                    date: DateFormat('dd MMM yyyy').format(DateTime.now()),
+                    status: _selectedStatus,
+                    note: _noteController.text,
+                    images: _images,
+                  );
+                  TaskService().addCompletedTask(newTask);
+
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
                       builder: (context) => TaskSuccessPage(
                         taskId: '#TGS-001', 
                         newStatus: _selectedStatus,
+                        images: _images,
+                        note: _noteController.text,
                       ),
                     ),
                   );

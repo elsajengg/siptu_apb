@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'task_detail_page.dart';
+import '../../data/task_service.dart';
 
 class CompletedTasksPage extends StatelessWidget {
   const CompletedTasksPage({super.key});
@@ -10,8 +11,18 @@ class CompletedTasksPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final red = Colors.red.shade800;
 
-    // Mock data for completed tasks
-    final List<Map<String, dynamic>> _completedTasks = [
+    // Merge real data from TaskService with mock data
+    final realTasks = TaskService().completedTasks.map((t) => {
+      'id': t.id,
+      'title': t.title,
+      'location': t.location,
+      'date': t.date,
+      'status': t.status,
+      'note': t.note,
+      'localImages': t.images,
+    }).toList();
+
+    final List<Map<String, dynamic>> _mockTasks = [
       {
         'id': 'TGS-010',
         'title': 'Perbaikan AC Ruang 302',
@@ -35,6 +46,8 @@ class CompletedTasksPage extends StatelessWidget {
       },
     ];
 
+    final _allTasks = [...realTasks, ..._mockTasks];
+
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
@@ -48,9 +61,9 @@ class CompletedTasksPage extends StatelessWidget {
       ),
       body: ListView.builder(
         padding: EdgeInsets.all(16 * _phi),
-        itemCount: _completedTasks.length,
+        itemCount: _allTasks.length,
         itemBuilder: (context, index) {
-          final task = _completedTasks[index];
+          final task = _allTasks[index];
           return Container(
             margin: EdgeInsets.only(bottom: 12 * _phi),
             decoration: BoxDecoration(
@@ -79,7 +92,11 @@ class CompletedTasksPage extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => TaskDetailPage(task: task)),
+                  MaterialPageRoute(builder: (context) => TaskDetailPage(
+                    task: task,
+                    localImages: task['localImages'],
+                    customNote: task['note'],
+                  )),
                 );
               },
             ),

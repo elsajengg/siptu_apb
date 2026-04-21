@@ -1,9 +1,17 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 
 class TaskDetailPage extends StatelessWidget {
   final Map<String, dynamic> task;
+  final List<File>? localImages;
+  final String? customNote;
 
-  const TaskDetailPage({super.key, required this.task});
+  const TaskDetailPage({
+    super.key, 
+    required this.task,
+    this.localImages,
+    this.customNote,
+  });
 
   static const double _phi = 1.61803398875;
 
@@ -102,9 +110,9 @@ class TaskDetailPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: Colors.grey.shade200),
                     ),
-                    child: const Text(
-                      'Perbaikan telah dilakukan pada komponen utama. Seluruh fungsi telah diuji kembali dan berjalan normal. Tidak ada kerusakan tambahan yang ditemukan di area sekitar.',
-                      style: TextStyle(
+                    child: Text(
+                      customNote ?? 'Perbaikan telah dilakukan pada komponen utama. Seluruh fungsi telah diuji kembali dan berjalan normal. Tidak ada kerusakan tambahan yang ditemukan di area sekitar.',
+                      style: const TextStyle(
                         fontSize: 13,
                         color: Colors.black87,
                         height: 1.6,
@@ -191,10 +199,21 @@ class TaskDetailPage extends StatelessWidget {
           ),
           const Text(':  ', style: TextStyle(fontSize: 13, color: Colors.black54)),
           Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
-            ),
+            child: label == 'Judul Pekerjaan' 
+              ? Hero(
+                  tag: 'task_title_${task['id']}',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Text(
+                      value,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+                    ),
+                  ),
+                )
+              : Text(
+                  value,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+                ),
           ),
         ],
       ),
@@ -202,6 +221,30 @@ class TaskDetailPage extends StatelessWidget {
   }
 
   Widget _buildPhotoGrid() {
+    if (localImages != null && localImages!.isNotEmpty) {
+      return SizedBox(
+        height: 150,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: localImages!.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          itemBuilder: (context, index) {
+            return Container(
+              width: 200,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(7),
+                child: Image.file(localImages![index], fit: BoxFit.cover),
+              ),
+            );
+          },
+        ),
+      );
+    }
+
     return Row(
       children: [
         _buildReportPhoto('https://picsum.photos/400?1'),

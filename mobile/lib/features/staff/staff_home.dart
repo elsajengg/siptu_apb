@@ -247,17 +247,12 @@ class _StaffDashboard extends StatelessWidget {
           const Divider(height: 1),
           Builder(
             builder: (context) {
-              // Primary Sort: Priority (Urgent > Tinggi > Sedang)
-              // Secondary Sort: Difficulty (Berat > Sedang > Rendah)
               final sortedTasks = List<Map<String, dynamic>>.from(_myActiveTasks);
               sortedTasks.sort((a, b) {
                 const priorityOrder = {'urgent': 0, 'tinggi': 1, 'sedang': 2};
                 final pA = priorityOrder[a['priority'].toString().toLowerCase()] ?? 99;
                 final pB = priorityOrder[b['priority'].toString().toLowerCase()] ?? 99;
-                
                 if (pA != pB) return pA.compareTo(pB);
-
-                // If priority is the same, sort by difficulty
                 const diffOrder = {'berat': 0, 'sedang': 1, 'rendah': 2};
                 final dA = diffOrder[a['difficulty']?.toString().toLowerCase()] ?? 99;
                 final dB = diffOrder[b['difficulty']?.toString().toLowerCase()] ?? 99;
@@ -274,8 +269,6 @@ class _StaffDashboard extends StatelessWidget {
                   final task = sortedTasks[index];
                   final p = task['priority'].toString().toLowerCase();
                   final d = task['difficulty']?.toString().toLowerCase() ?? '';
-                  
-                  // Formal color indicator logic
                   Color indicatorColor = Colors.transparent;
                   if (p == 'urgent') {
                     indicatorColor = d == 'berat' ? const Color(0xFF991B1B) : const Color(0xFFEF4444);
@@ -285,46 +278,70 @@ class _StaffDashboard extends StatelessWidget {
 
                   return Container(
                     decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: indicatorColor, width: 4),
-                      ),
+                      border: Border(left: BorderSide(color: indicatorColor, width: 4)),
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    title: Text(
-                      task['title'],
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.access_time, size: 12, color: Colors.black45),
-                          const SizedBox(width: 4),
-                          Text(
-                            task['deadline'],
-                            style: const TextStyle(fontSize: 11, color: Colors.black54),
+                    child: TweenAnimationBuilder(
+                      duration: Duration(milliseconds: 400 + (index * 100)),
+                      tween: Tween<double>(begin: 0, end: 1),
+                      curve: Curves.easeOutQuart,
+                      builder: (context, double value, child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.translate(
+                            offset: Offset(0, 20 * (1 - value)),
+                            child: child,
                           ),
-                        ],
+                        );
+                      },
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        title: Hero(
+                          tag: 'task_title_${task['id']}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Text(
+                              task['title'],
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.access_time, size: 12, color: Colors.black45),
+                              const SizedBox(width: 4),
+                              Text(
+                                task['deadline'],
+                                style: const TextStyle(fontSize: 11, color: Colors.black54),
+                              ),
+                            ],
+                          ),
+                        ),
+                        trailing: const Icon(Icons.chevron_right, color: Colors.black26),
+                        onTap: () {
+                          if (task['status'] == 'Selesai') {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                transitionDuration: const Duration(milliseconds: 500),
+                                pageBuilder: (context, animation, secondaryAnimation) => TaskDetailPage(task: task),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(opacity: animation, child: child);
+                                },
+                              ),
+                            );
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const UpdateStatusPage()),
+                            );
+                          }
+                        },
                       ),
                     ),
-                    trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-                    onTap: () {
-                      if (task['status'] == 'Selesai') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => TaskDetailPage(task: task)),
-                        );
-                      } else {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => UpdateStatusPage()),
-                        );
-                      }
-                    },
-                      ),
-                    );
-                  },
+                  );
+                },
               );
             },
           ),
@@ -332,7 +349,6 @@ class _StaffDashboard extends StatelessWidget {
       ),
     );
   }
-
 }
 
 
