@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../auth/login_page.dart';
+import 'completed_tasks_page.dart';
 
 class StaffProfilePage extends StatefulWidget {
   const StaffProfilePage({super.key});
@@ -11,6 +12,10 @@ class StaffProfilePage extends StatefulWidget {
 class _StaffProfilePageState extends State<StaffProfilePage> {
   static const double _phi = 1.61803398875;
   bool _notificationsEnabled = true;
+  String _name = 'Budi Santoso';
+  String _position = 'Staff Teknisi Ahli • Fasilitas & Infrastruktur';
+  String _email = 'budi.santoso@telkomuniversity.ac.id';
+  String _phone = '+62 812-3456-7890';
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +51,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
               child: Column(
                 children: [
                   Text(
-                    'Budi Santoso',
+                    _name,
                     style: TextStyle(
                       fontSize: 18 * _phi,
                       fontWeight: FontWeight.bold,
@@ -56,7 +61,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                   ),
                   SizedBox(height: 4 * _phi),
                   Text(
-                    'Staff Teknisi Ahli • Fasilitas & Infrastruktur',
+                    _position,
                     style: TextStyle(
                       fontSize: 8 * _phi,
                       color: Colors.grey.shade600,
@@ -76,14 +81,24 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
               _MenuTile(
                 icon: Icons.alternate_email_rounded,
                 title: 'Email',
-                subtitle: 'budi.santoso@telkomuniversity.ac.id',
-                onTap: () => _showTopup(context, 'Edit Email'),
+                subtitle: _email,
+                onTap: () => _showEditEmailDialog(),
               ),
               _MenuTile(
                 icon: Icons.phone_android_rounded,
                 title: 'Nomor Telepon',
-                subtitle: '+62 812-3456-7890',
-                onTap: () => _showTopup(context, 'Edit No. Telepon'),
+                subtitle: _phone,
+                onTap: () => _showEditPhoneDialog(),
+              ),
+              _MenuTile(
+                icon: Icons.assignment_turned_in_rounded,
+                title: 'Riwayat Perbaikan Selesai',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const CompletedTasksPage()),
+                  );
+                },
               ),
 
             ]),
@@ -96,7 +111,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
               _MenuTile(
                 icon: Icons.lock_outline_rounded,
                 title: 'Ganti Kata Sandi',
-                onTap: () => _showTopup(context, 'Ganti Password'),
+                onTap: () => _showChangePasswordDialog(),
               ),
               SwitchListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -150,9 +165,12 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           Positioned(
             top: 50,
             right: 20,
-            child: CircleAvatar(
-              backgroundColor: Colors.white.withOpacity(0.1),
-              child: const Icon(Icons.edit, color: Colors.white, size: 20),
+            child: GestureDetector(
+              onTap: () => _showEditProfileDialog(),
+              child: CircleAvatar(
+                backgroundColor: Colors.white.withOpacity(0.1),
+                child: const Icon(Icons.edit, color: Colors.white, size: 20),
+              ),
             ),
           ),
         ],
@@ -228,6 +246,71 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
     );
   }
 
+  void _showEditProfileDialog() {
+    final nameCtrl = TextEditingController(text: _name);
+    final posCtrl = TextEditingController(text: _position);
+    final emailCtrl = TextEditingController(text: _email);
+    final phoneCtrl = TextEditingController(text: _phone);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Edit Profil', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildEditField(nameCtrl, 'Nama Lengkap', Icons.person_outline),
+              const SizedBox(height: 16),
+              _buildEditField(posCtrl, 'Posisi / Unit', Icons.work_outline),
+              const SizedBox(height: 16),
+              _buildEditField(emailCtrl, 'Email', Icons.alternate_email, type: TextInputType.emailAddress),
+              const SizedBox(height: 16),
+              _buildEditField(phoneCtrl, 'Nomor Telepon', Icons.phone_android_rounded, type: TextInputType.phone),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade800,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            onPressed: () {
+              setState(() {
+                _name = nameCtrl.text;
+                _position = posCtrl.text;
+                _email = emailCtrl.text;
+                _phone = phoneCtrl.text;
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Profil berhasil diperbarui')),
+              );
+            },
+            child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditField(TextEditingController ctrl, String label, IconData icon, {TextInputType? type}) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: type,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
   Widget _buildActionCard(List<Widget> children) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -256,6 +339,125 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
             );
           }).toList(),
         ),
+      ),
+    );
+  }
+
+  void _showEditEmailDialog() {
+    final controller = TextEditingController(text: _email);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Edit Email', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: 'Alamat Email',
+            hintText: 'nama@telkomuniversity.ac.id',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade800),
+            onPressed: () {
+              setState(() => _email = controller.text);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Email berhasil diperbarui')),
+              );
+            },
+            child: const Text('Simpan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditPhoneDialog() {
+    final controller = TextEditingController(text: _phone);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Edit No. Telepon', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: 'Nomor Telepon',
+            prefixText: '',
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          keyboardType: TextInputType.phone,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade800),
+            onPressed: () {
+              setState(() => _phone = controller.text);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Nomor telepon berhasil diperbarui')),
+              );
+            },
+            child: const Text('Simpan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Ganti Kata Sandi', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Password Sekarang',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Password Baru',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Konfirmasi Password Baru',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade800),
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Kata sandi berhasil diperbarui')),
+              );
+            },
+            child: const Text('Update', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }

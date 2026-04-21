@@ -248,12 +248,6 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
-              const Text(
-                'UI ini meniru alur MyTelU (login → dashboard). Backend/auth asli bisa disambungkan nanti.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: Colors.black54),
-              ),
             ],
           ),
         ),

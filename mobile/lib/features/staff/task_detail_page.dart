@@ -12,88 +12,142 @@ class TaskDetailPage extends StatelessWidget {
     final red = Colors.red.shade800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: red,
+        backgroundColor: Colors.white,
         elevation: 0,
-        centerTitle: false,
+        leading: BackButton(color: red),
+        centerTitle: true,
         title: Text(
-          'Detail Tugas - ${task['id']}',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
+          'LAPORAN PERBAIKAN',
+          style: TextStyle(
+            color: red,
+            fontWeight: FontWeight.w900,
+            fontSize: 14,
+            letterSpacing: 2,
           ),
         ),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: Icon(Icons.share_outlined, color: red),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16 * _phi),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Status Badge ─────────────────────────────────────
-            _buildStatusHeader(task['status']),
-            SizedBox(height: 20 * _phi),
-
-            // ── Task Information ──────────────────────────────────
-            _buildSectionLabel('Informasi Tugas'),
-            SizedBox(height: 8 * _phi),
-            _buildInfoCard([
-              _InfoRow(label: 'Judul Tugas', value: task['title'] ?? 'N/A'),
-              _InfoRow(label: 'Lokasi Kerja', value: task['location'] ?? 'N/A'),
-              _InfoRow(label: 'Deadline', value: task['deadline'] ?? 'N/A'),
-              _InfoRow(label: 'Kategori', value: 'Perbaikan Umum', isLast: true),
-            ]),
-            SizedBox(height: 24 * _phi),
-
-            // ── Repair Results (Read Only) ────────────────────────
-            _buildSectionLabel('Hasil Perbaikan'),
-            SizedBox(height: 8 * _phi),
-            _buildInfoCard([
-              _InfoRow(
-                label: 'Selesai Pada', 
-                value: '21 April 2026, 14:30', // Mock data
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Catatan Petugas:',
-                      style: TextStyle(color: Colors.black45, fontSize: 13),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Perbaikan telah dilakukan sesuai instruksi. Komponen yang rusak telah diganti dengan yang baru.',
-                      style: TextStyle(fontSize: 14, color: Colors.black87, height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-              const _InfoRow(label: 'Dokumentasi', value: '2 Foto Terlampir', isLast: true),
-            ]),
-            SizedBox(height: 20 * _phi),
-
-            // ── Mock Photo Gallery ────────────────────────────────
-            _buildPhotoGallery(),
-
-            SizedBox(height: 32 * _phi),
-
-            // ── Bottom Action ────────────────────────────────────
-            SizedBox(
+            // ── Official Status Banner ───────────────────────────
+            Container(
               width: double.infinity,
-              height: 54,
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: red),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                ),
-                child: Text(
-                  'Tutup Detail',
-                  style: TextStyle(color: red, fontWeight: FontWeight.bold),
-                ),
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              color: Colors.green.shade600,
+              child: Column(
+                children: [
+                  const Icon(Icons.verified, color: Colors.white, size: 32),
+                  const SizedBox(height: 8),
+                  Text(
+                    'TUGAS ${task['status'].toUpperCase()}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const Text(
+                    'Tervalidasi secara digital oleh SIPTU Mobile',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ],
+              ),
+            ),
+
+            Padding(
+              padding: EdgeInsets.all(20 * _phi),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Document Metadata ─────────────────────────────
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildHeaderInfo('NO. TIKET', task['id']),
+                      _buildHeaderInfo('TANGGAL SELESAI', '21 April 2026'),
+                    ],
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Divider(thickness: 1.5),
+                  ),
+
+                  // ── Work Info ─────────────────────────────────────
+                  _buildSectionTitle('I. DETAIL PENUGASAN'),
+                  SizedBox(height: 12),
+                  _buildDetailRow('Judul Pekerjaan', task['title']),
+                  _buildDetailRow('Lokasi Fasilitas', task['location']),
+                  _buildDetailRow('Kategori', 'Pemeliharaan Gedung'),
+                  _buildDetailRow('Prioritas', 'Tinggi'),
+                  
+                  SizedBox(height: 24 * _phi),
+
+                  // ── Technician Notes ──────────────────────────────
+                  _buildSectionTitle('II. CATATAN TEKNISI'),
+                  SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF9FAFB),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: const Text(
+                      'Perbaikan telah dilakukan pada komponen utama. Seluruh fungsi telah diuji kembali dan berjalan normal. Tidak ada kerusakan tambahan yang ditemukan di area sekitar.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                        height: 1.6,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  
+                  SizedBox(height: 24 * _phi),
+
+                  // ── Visual Documentation ──────────────────────────
+                  _buildSectionTitle('III. DOKUMENTASI VISUAL'),
+                  SizedBox(height: 12),
+                  _buildPhotoGrid(),
+                  
+                  SizedBox(height: 40),
+
+                  // ── Official Footer/Seal ──────────────────────────
+                  Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.qr_code_2, size: 48, color: Colors.grey.shade400),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'SIPTU DIGITAL SEAL',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey.shade400,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
           ],
@@ -102,114 +156,74 @@ class TaskDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusHeader(String status) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.green.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.green.shade100),
+  Widget _buildHeaderInfo(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.black45, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 4),
+        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 11,
+        fontWeight: FontWeight.w900,
+        color: Colors.black45,
+        letterSpacing: 1,
       ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.check_circle, color: Colors.green.shade600, size: 24),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Tugas Telah $status',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade800,
-                  fontSize: 15,
-                ),
-              ),
-              const Text(
-                'Terverifikasi oleh sistem',
-                style: TextStyle(fontSize: 12, color: Colors.green),
-              ),
-            ],
+          SizedBox(
+            width: 120,
+            child: Text(label, style: const TextStyle(fontSize: 13, color: Colors.black54)),
+          ),
+          const Text(':  ', style: TextStyle(fontSize: 13, color: Colors.black54)),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: -0.2),
-    );
-  }
-
-  Widget _buildInfoCard(List<Widget> children) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(children: children),
-    );
-  }
-
-  Widget _buildPhotoGallery() {
+  Widget _buildPhotoGrid() {
     return Row(
       children: [
-        _buildMockPhoto('https://picsum.photos/200?1'),
+        _buildReportPhoto('https://picsum.photos/400?1'),
         const SizedBox(width: 12),
-        _buildMockPhoto('https://picsum.photos/200?2'),
+        _buildReportPhoto('https://picsum.photos/400?2'),
       ],
     );
   }
 
-  Widget _buildMockPhoto(String url) {
+  Widget _buildReportPhoto(String url) {
     return Expanded(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          height: 120,
-          color: Colors.grey.shade200,
+      child: Container(
+        height: 150,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(7),
           child: Image.network(url, fit: BoxFit.cover),
         ),
       ),
-    );
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isLast;
-  const _InfoRow({required this.label, required this.value, this.isLast = false, isStatus = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(label, style: const TextStyle(color: Colors.black45, fontSize: 13)),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  value,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
-                ),
-              ),
-            ],
-          ),
-        ),
-        if (!isLast) Divider(height: 1, color: Colors.grey.shade100),
-      ],
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'report_feed_page.dart';
+import 'report_success_page.dart';
 import 'dart:io';
 
 const _categories = <String>[
@@ -16,8 +17,19 @@ const _categories = <String>[
 
 class ReportCreatePage extends StatefulWidget {
   final String currentUser;
+  final String? initialNama;
+  final String? initialNIM;
+  final String? initialFakultas;
+  final String? initialLocation;
 
-  const ReportCreatePage({super.key, required this.currentUser});
+  const ReportCreatePage({
+    super.key,
+    required this.currentUser,
+    this.initialNama,
+    this.initialNIM,
+    this.initialFakultas,
+    this.initialLocation,
+  });
 
   @override
   State<ReportCreatePage> createState() => _ReportCreatePageState();
@@ -25,6 +37,9 @@ class ReportCreatePage extends StatefulWidget {
 
 class _ReportCreatePageState extends State<ReportCreatePage> {
   final _formKey = GlobalKey<FormState>();
+  final _namaCtrl = TextEditingController();
+  final _nimCtrl = TextEditingController();
+  final _fakultasCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
@@ -37,10 +52,17 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   void initState() {
     super.initState();
     _category = _categories.first;
+    _namaCtrl.text = widget.initialNama ?? '';
+    _nimCtrl.text = widget.initialNIM ?? '';
+    _fakultasCtrl.text = widget.initialFakultas ?? '';
+    _locationCtrl.text = widget.initialLocation ?? '';
   }
 
   @override
   void dispose() {
+    _namaCtrl.dispose();
+    _nimCtrl.dispose();
+    _fakultasCtrl.dispose();
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _locationCtrl.dispose();
@@ -73,6 +95,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
     await Future<void>.delayed(const Duration(milliseconds: 250));
     if (!mounted) return;
 
+    // Generate the report object (mockup for now)
     final report = Report(
       id: _makeId(),
       title: _titleCtrl.text.trim(),
@@ -88,7 +111,20 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
       photoPath: _photo?.path,
     );
 
-    Navigator.of(context).pop<Report>(report);
+    // Instead of popping, navigate to success page
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReportSuccessPage(
+          keptData: {
+            'nama': _namaCtrl.text.trim(),
+            'nim': _nimCtrl.text.trim(),
+            'fakultas': _fakultasCtrl.text.trim(),
+            'location': _locationCtrl.text.trim(),
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -161,6 +197,50 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                           ),
                         ),
 
+                        const SizedBox(height: 16),
+
+                        /// NAMA
+                        _inputWrapper(
+                          child: TextFormField(
+                            controller: _namaCtrl,
+                            decoration: const InputDecoration(
+                              hintText: "Nama Lengkap",
+                              border: InputBorder.none,
+                              prefixIcon: Icon(Icons.person),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        /// NIM
+                        _inputWrapper(
+                          child: TextFormField(
+                            controller: _nimCtrl,
+                            decoration: const InputDecoration(
+                              hintText: "NIM",
+                              border: InputBorder.none,
+                              prefixIcon: Icon(Icons.badge),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        /// FAKULTAS
+                        _inputWrapper(
+                          child: TextFormField(
+                            controller: _fakultasCtrl,
+                            decoration: const InputDecoration(
+                              hintText: "Fakultas",
+                              border: InputBorder.none,
+                              prefixIcon: Icon(Icons.school),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+                        const Divider(),
                         const SizedBox(height: 16),
 
                         /// DROPDOWN

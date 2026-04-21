@@ -57,14 +57,32 @@ class _StaffDashboard extends StatelessWidget {
     {
       'id': 'TGS-001',
       'title': 'Perbaikan AC Ruang 302',
-      'priority': 'Tinggi',
+      'priority': 'Urgent',
+      'difficulty': 'Berat',
       'deadline': 'Hari ini, 16:00',
+      'status': 'Diproses',
+    },
+    {
+      'id': 'TGS-004',
+      'title': 'Ganti Panel Lantai 2',
+      'priority': 'Urgent',
+      'difficulty': 'Sedang',
+      'deadline': 'Hari ini, 18:00',
+      'status': 'Diproses',
+    },
+    {
+      'id': 'TGS-005',
+      'title': 'Atur Temperatur Server',
+      'priority': 'Urgent',
+      'difficulty': 'Rendah',
+      'deadline': 'Hari ini, 20:00',
       'status': 'Diproses',
     },
     {
       'id': 'TGS-002',
       'title': 'Ganti Lampu Selasar Barat',
       'priority': 'Sedang',
+      'difficulty': 'Rendah',
       'deadline': 'Besok, 10:00',
       'status': 'Diproses',
     },
@@ -72,6 +90,7 @@ class _StaffDashboard extends StatelessWidget {
       'id': 'TGS-003',
       'title': 'Pengecekan Panel Listrik Gedung C',
       'priority': 'Tinggi',
+      'difficulty': 'Sedang',
       'deadline': '22 Apr 2026',
       'status': 'Menunggu',
     },
@@ -226,49 +245,86 @@ class _StaffDashboard extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
-          ListView.separated(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _myActiveTasks.length,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final task = _myActiveTasks[index];
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                title: Text(
-                  task['title'],
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.access_time, size: 12, color: Colors.black45),
-                      const SizedBox(width: 4),
-                      Text(
-                        task['deadline'],
-                        style: const TextStyle(fontSize: 11, color: Colors.black54),
-                      ),
-                      const SizedBox(width: 10),
-                      _PriorityTag(priority: task['priority']),
-                    ],
-                  ),
-                ),
-                trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-                onTap: () {
-                  if (task['status'] == 'Selesai') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => TaskDetailPage(task: task)),
-                    );
-                  } else {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => UpdateStatusPage()),
-                    );
+          Builder(
+            builder: (context) {
+              // Primary Sort: Priority (Urgent > Tinggi > Sedang)
+              // Secondary Sort: Difficulty (Berat > Sedang > Rendah)
+              final sortedTasks = List<Map<String, dynamic>>.from(_myActiveTasks);
+              sortedTasks.sort((a, b) {
+                const priorityOrder = {'urgent': 0, 'tinggi': 1, 'sedang': 2};
+                final pA = priorityOrder[a['priority'].toString().toLowerCase()] ?? 99;
+                final pB = priorityOrder[b['priority'].toString().toLowerCase()] ?? 99;
+                
+                if (pA != pB) return pA.compareTo(pB);
+
+                // If priority is the same, sort by difficulty
+                const diffOrder = {'berat': 0, 'sedang': 1, 'rendah': 2};
+                final dA = diffOrder[a['difficulty']?.toString().toLowerCase()] ?? 99;
+                final dB = diffOrder[b['difficulty']?.toString().toLowerCase()] ?? 99;
+                return dA.compareTo(dB);
+              });
+
+              return ListView.separated(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: sortedTasks.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final task = sortedTasks[index];
+                  final p = task['priority'].toString().toLowerCase();
+                  final d = task['difficulty']?.toString().toLowerCase() ?? '';
+                  
+                  // Formal color indicator logic
+                  Color indicatorColor = Colors.transparent;
+                  if (p == 'urgent') {
+                    indicatorColor = d == 'berat' ? const Color(0xFF991B1B) : const Color(0xFFEF4444);
+                  } else if (p == 'tinggi') {
+                    indicatorColor = Colors.orange.shade700;
                   }
-                },
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(color: indicatorColor, width: 4),
+                      ),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    title: Text(
+                      task['title'],
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    ),
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.access_time, size: 12, color: Colors.black45),
+                          const SizedBox(width: 4),
+                          Text(
+                            task['deadline'],
+                            style: const TextStyle(fontSize: 11, color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right, color: Colors.black26),
+                    onTap: () {
+                      if (task['status'] == 'Selesai') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => TaskDetailPage(task: task)),
+                        );
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => UpdateStatusPage()),
+                        );
+                      }
+                    },
+                      ),
+                    );
+                  },
               );
             },
           ),
@@ -281,34 +337,3 @@ class _StaffDashboard extends StatelessWidget {
 
 
 
-class _PriorityTag extends StatelessWidget {
-  final String priority;
-  const _PriorityTag({required this.priority});
-
-  @override
-  Widget build(BuildContext context) {
-    Color color;
-    switch (priority.toLowerCase()) {
-      case 'tinggi':
-        color = Colors.red;
-        break;
-      case 'sedang':
-        color = Colors.orange;
-        break;
-      default:
-        color = Colors.blue;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        priority,
-        style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}

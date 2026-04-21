@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'task_detail_page.dart';
 
 class TaskSuccessPage extends StatelessWidget {
   final String taskId;
@@ -89,6 +90,38 @@ class TaskSuccessPage extends StatelessWidget {
                   child: const Text(
                     'Kembali ke Beranda',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+              ),
+              SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: OutlinedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TaskDetailPage(
+                          task: {
+                            'id': taskId,
+                            'title': 'Perbaikan Fasilitas',
+                            'status': newStatus,
+                            'location': 'Lokasi Terlampir',
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(
+                    'Lihat Detail Perbaikan',
+                    style: TextStyle(color: red, fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
               ),
