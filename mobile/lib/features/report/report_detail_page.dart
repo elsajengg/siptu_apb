@@ -1,7 +1,5 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-
 import 'report_feed_page.dart';
 
 class ReportDetailPage extends StatelessWidget {
@@ -15,20 +13,26 @@ class ReportDetailPage extends StatelessWidget {
     final createdAt = _formatDateTime(report.createdAt);
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9FAFB),
       appBar: AppBar(
         backgroundColor: red,
+        elevation: 0,
         foregroundColor: Colors.white,
-        title: const Text('Detail Pengaduan'),
+        centerTitle: false,
+        title: const Text(
+          'Detail Pengaduan',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: [
           _HeaderCard(report: report, createdAt: createdAt),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           if (report.photoPaths.isNotEmpty) _PhotoCard(paths: report.photoPaths),
-          if (report.photoPaths.isNotEmpty) const SizedBox(height: 12),
+          if (report.photoPaths.isNotEmpty) const SizedBox(height: 16),
           _BodyCard(report: report),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           _StaffCard(report: report),
         ],
       ),
@@ -45,15 +49,15 @@ class _HeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           )
         ],
       ),
@@ -64,17 +68,17 @@ class _HeaderCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CircleAvatar(
-                radius: 18,
-                backgroundColor: const Color(0xFFFEE2E2),
+                radius: 22,
+                backgroundColor: const Color(0xFFFFE4E1),
                 foregroundColor: const Color(0xFF991B1B),
                 child: Text(
                   report.createdBy.trim().isEmpty
                       ? '?'
                       : report.createdBy.trim()[0].toUpperCase(),
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,32 +86,35 @@ class _HeaderCard extends StatelessWidget {
                     Text(
                       report.title,
                       style: const TextStyle(
-                        fontSize: 16,
+                        fontSize: 17,
                         fontWeight: FontWeight.w800,
+                        height: 1.2,
+                        color: Color(0xFF1F2937),
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
-                      runSpacing: 6,
+                      runSpacing: 8,
                       children: [
                         _Pill(
-                          icon: Icons.category_outlined,
+                          icon: Icons.category_rounded,
                           label: report.category,
                         ),
                         _Pill(
-                          icon: Icons.place_outlined,
+                          icon: Icons.location_on_rounded,
                           label: report.location,
                         ),
                         _StatusPill(status: report.status),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 14),
                     Text(
                       '@${report.createdBy} • $createdAt',
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Colors.black54,
+                        color: Colors.black45,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -115,15 +122,17 @@ class _HeaderCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 14),
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
+          const SizedBox(height: 14),
           Row(
             children: [
-              const Icon(Icons.thumb_up_alt_outlined,
-                  size: 18, color: Colors.black54),
-              const SizedBox(width: 6),
+              const Icon(Icons.thumb_up_alt_rounded,
+                  size: 18, color: Colors.black38),
+              const SizedBox(width: 8),
               Text(
                 '${report.likes} dukungan',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                style: const TextStyle(fontSize: 12, color: Colors.black45, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -151,12 +160,12 @@ class _PhotoCardState extends State<_PhotoCard> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           )
         ],
       ),
@@ -198,7 +207,7 @@ class _PhotoCardState extends State<_PhotoCard> {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        'Geser foto ${_currentIndex + 1}/${widget.paths.length}',
+                        'Foto ${_currentIndex + 1}/${widget.paths.length}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
@@ -252,15 +261,15 @@ class _BodyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           )
         ],
       ),
@@ -269,12 +278,12 @@ class _BodyCard extends StatelessWidget {
         children: [
           const Text(
             'Deskripsi',
-            style: TextStyle(fontWeight: FontWeight.w800),
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF1F2937)),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             report.description,
-            style: const TextStyle(fontSize: 13, height: 1.35),
+            style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF4B5563)),
           ),
         ],
       ),
@@ -291,15 +300,15 @@ class _StaffCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasFeedback = report.staffFeedback.trim().isNotEmpty;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
           BoxShadow(
-            color: Colors.black12,
-            blurRadius: 6,
-            offset: Offset(0, 3),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           )
         ],
       ),
@@ -308,18 +317,18 @@ class _StaffCard extends StatelessWidget {
         children: [
           const Text(
             'Feedback Staff',
-            style: TextStyle(fontWeight: FontWeight.w800),
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: Color(0xFF1F2937)),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           if (hasFeedback)
             Text(
-              '${report.staffName}\n${report.staffFeedback}',
-              style: const TextStyle(fontSize: 13, height: 1.35),
+              report.staffFeedback,
+              style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF4B5563)),
             )
           else
             const Text(
-              'Belum ada feedback dari staff.',
-              style: TextStyle(fontSize: 13, color: Colors.black54),
+              'Petugas sedang meninjau laporan ini. Mohon tunggu update selanjutnya.',
+              style: TextStyle(fontSize: 13, color: Colors.black38, height: 1.5),
             ),
         ],
       ),
@@ -336,22 +345,22 @@ class _Pill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFF3F4F6),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: Colors.black54),
-          const SizedBox(width: 6),
+          Icon(icon, size: 16, color: Colors.black45),
+          const SizedBox(width: 8),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 220),
+            constraints: const BoxConstraints(maxWidth: 200),
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 12),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
             ),
           ),
         ],
@@ -378,14 +387,28 @@ class _StatusPill extends StatelessWidget {
     }
   }
 
+  Color _statusBgColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'menunggu':
+        return const Color(0xFFFFF7ED);
+      case 'diproses':
+        return const Color(0xFFFEF9C3);
+      case 'selesai':
+        return const Color(0xFFF0FDF4);
+      default:
+        return const Color(0xFFF9FAFB);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = _statusColor(status);
+    final bgColor = _statusBgColor(status);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        color: color.withAlpha((0.12 * 255).round()),
+        borderRadius: BorderRadius.circular(12),
+        color: bgColor,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -395,13 +418,13 @@ class _StatusPill extends StatelessWidget {
             height: 8,
             decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           Text(
             status,
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: color,
+              fontWeight: FontWeight.w800,
+              color: color.withOpacity(0.8),
             ),
           ),
         ],
@@ -412,22 +435,10 @@ class _StatusPill extends StatelessWidget {
 
 String _formatDateTime(DateTime dt) {
   const months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'Mei',
-    'Jun',
-    'Jul',
-    'Agu',
-    'Sep',
-    'Okt',
-    'Nov',
-    'Des',
+    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
   ];
   final m = months[(dt.month - 1).clamp(0, 11)];
   final hh = dt.hour.toString().padLeft(2, '0');
   final mm = dt.minute.toString().padLeft(2, '0');
   return '${dt.day} $m ${dt.year} $hh:$mm';
 }
-

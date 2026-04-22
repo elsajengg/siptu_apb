@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'update_status.dart';
 
 class TaskDetailPage extends StatelessWidget {
   final Map<String, dynamic> task;
@@ -36,6 +38,22 @@ class TaskDetailPage extends StatelessWidget {
           ),
         ),
         actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UpdateStatusPage(
+                    initialStatus: task['status'],
+                    initialNote: customNote,
+                    initialImages: localImages,
+                  ),
+                ),
+              );
+            },
+            icon: Icon(Icons.edit_note_rounded, color: red, size: 28),
+            tooltip: 'Edit Laporan',
+          ),
           IconButton(
             onPressed: () {},
             icon: Icon(Icons.share_outlined, color: red),
@@ -91,7 +109,7 @@ class TaskDetailPage extends StatelessWidget {
 
                   // ── Work Info ─────────────────────────────────────
                   _buildSectionTitle('I. DETAIL PENUGASAN'),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   _buildDetailRow('Judul Pekerjaan', task['title']),
                   _buildDetailRow('Lokasi Fasilitas', task['location']),
                   _buildDetailRow('Kategori', 'Pemeliharaan Gedung'),
@@ -101,7 +119,7 @@ class TaskDetailPage extends StatelessWidget {
 
                   // ── Technician Notes ──────────────────────────────
                   _buildSectionTitle('II. CATATAN TEKNISI'),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -125,10 +143,10 @@ class TaskDetailPage extends StatelessWidget {
 
                   // ── Visual Documentation ──────────────────────────
                   _buildSectionTitle('III. DOKUMENTASI VISUAL'),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   _buildPhotoGrid(),
                   
-                  SizedBox(height: 40),
+                  const SizedBox(height: 40),
 
                   // ── Official Footer/Seal ──────────────────────────
                   Center(
@@ -237,7 +255,9 @@ class TaskDetailPage extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(7),
-                child: Image.file(localImages![index], fit: BoxFit.cover),
+                child: kIsWeb 
+                   ? Image.network(localImages![index].path, fit: BoxFit.cover)
+                   : Image.file(localImages![index], fit: BoxFit.cover),
               ),
             );
           },

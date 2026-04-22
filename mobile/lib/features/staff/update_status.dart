@@ -6,7 +6,16 @@ import '../../data/task_service.dart';
 import 'package:intl/intl.dart';
 
 class UpdateStatusPage extends StatefulWidget {
-  const UpdateStatusPage({super.key});
+  final String? initialStatus;
+  final String? initialNote;
+  final List<File>? initialImages;
+
+  const UpdateStatusPage({
+    super.key,
+    this.initialStatus,
+    this.initialNote,
+    this.initialImages,
+  });
 
   @override
   State<UpdateStatusPage> createState() => _UpdateStatusPageState();
@@ -14,12 +23,26 @@ class UpdateStatusPage extends StatefulWidget {
 
 class _UpdateStatusPageState extends State<UpdateStatusPage> {
   static const double _phi = 1.61803398875;
-  String _selectedStatus = 'Diproses';
-  final TextEditingController _noteController = TextEditingController();
-  final List<File> _images = [];
+  late String _selectedStatus;
+  late final TextEditingController _noteController;
+  late final List<File> _images;
   final ImagePicker _picker = ImagePicker();
 
   final List<String> _statuses = ['Menunggu', 'Diproses', 'Selesai', 'Terkendala'];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedStatus = widget.initialStatus ?? 'Diproses';
+    _noteController = TextEditingController(text: widget.initialNote);
+    _images = List<File>.from(widget.initialImages ?? []);
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     try {
@@ -174,23 +197,29 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
             ],
             SizedBox(height: 20 * _phi),
 
-            _buildSectionTitle('Catatan Perbaikan'),
-            SizedBox(height: 8 * _phi),
+            _buildReportSectionTitle('II. CATATAN TEKNISI'),
+            SizedBox(height: 12),
             TextField(
               controller: _noteController,
               maxLines: 4,
+              cursorColor: red,
               decoration: InputDecoration(
-                hintText: 'Tuliskan detail perbaikan yang dilakukan...',
+                hintText: 'Tuliskan deskripsi perbaikan yang telah dilakukan...',
                 hintStyle: const TextStyle(fontSize: 13, color: Colors.black26),
                 filled: true,
                 fillColor: Colors.white,
+                contentPadding: const EdgeInsets.all(16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide(color: Colors.grey.shade200),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: Colors.grey.shade100),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: red, width: 1.5),
                 ),
               ),
             ),
@@ -232,7 +261,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: const Text(
-                  'Simpan Perubahan',
+                  'Kirim Deskripsi Perbaikan',
                   style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ),
@@ -247,6 +276,18 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
     return Text(
       title,
       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: -0.2),
+    );
+  }
+
+  Widget _buildReportSectionTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w900,
+        color: Colors.black26,
+        letterSpacing: 1.2,
+      ),
     );
   }
 
