@@ -35,6 +35,86 @@ class _HistoryPageState extends State<HistoryPage> {
     }
   }
 
+  Future<void> _openFeedbackDialog(Report report) async {
+    int selectedRating = 4;
+    final feedbackCtrl = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Feedback Pengaju'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Case ini sudah selesai. Berikan penilaian dan masukan untuk petugas.',
+                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: List.generate(5, (index) {
+                      final star = index + 1;
+                      return IconButton(
+                        onPressed: () => setDialogState(() {
+                          selectedRating = star;
+                        }),
+                        icon: Icon(
+                          star <= selectedRating ? Icons.star : Icons.star_border,
+                          color: const Color(0xFFF59E0B),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: feedbackCtrl,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Tulis feedback singkat...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Nanti'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade800,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Kirim'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (result != true) {
+      feedbackCtrl.dispose();
+      return;
+    }
+    ReportRepository.submitReporterFeedback(
+      reportId: report.id,
+      rating: selectedRating,
+      feedback: feedbackCtrl.text,
+    );
+    feedbackCtrl.dispose();
+    if (!mounted) return;
+    setState(() {});
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Feedback berhasil dikirim. Terima kasih.')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _filteredReports;
@@ -118,6 +198,7 @@ class _HistoryPageState extends State<HistoryPage> {
                       return _HistoryCard(
                         report: filtered[index],
                         statusColor: _statusColor(filtered[index].status),
+                        onGiveFeedback: () => _openFeedbackDialog(filtered[index]),
                       );
                     },
                   ),
@@ -178,10 +259,12 @@ class _HistoryPageState extends State<HistoryPage> {
 class _HistoryCard extends StatelessWidget {
   final Report report;
   final Color statusColor;
+  final VoidCallback onGiveFeedback;
 
   const _HistoryCard({
     required this.report,
     required this.statusColor,
+    required this.onGiveFeedback,
   });
 
   @override
@@ -321,6 +404,58 @@ class _HistoryCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (report.status == 'Selesai' && report.needsReporterFeedback) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.rate_review_outlined, size: 16, color: Color(0xFF92400E)),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Laporan selesai. Mohon feedback dari pengaju.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF78350F)),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: onGiveFeedback,
+                      child: const Text('Beri Feedback'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (report.status == 'Selesai' && !report.needsReporterFeedback && report.reporterRating != null) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF166534)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Feedback terkirim (${report.reporterRating}/5): ${report.reporterFeedback.isEmpty ? "Tanpa catatan" : report.reporterFeedback}',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF166534)),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),

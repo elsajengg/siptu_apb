@@ -17,6 +17,9 @@ class Report {
   final List<String> likedBy; // User IDs yang sudah support/like
   final String staffName;
   final String staffFeedback;
+  final bool needsReporterFeedback;
+  final int? reporterRating;
+  final String reporterFeedback;
   final DateTime createdAt;
   final List<String> photoPaths;
 
@@ -31,12 +34,20 @@ class Report {
     required this.likedBy,
     required this.staffName,
     required this.staffFeedback,
+    this.needsReporterFeedback = false,
+    this.reporterRating,
+    this.reporterFeedback = '',
     required this.createdAt,
     this.photoPaths = const [],
   });
 
   // Helper method untuk copy dengan likedBy yang baru
-  Report copyWith({List<String>? likedBy}) {
+  Report copyWith({
+    List<String>? likedBy,
+    bool? needsReporterFeedback,
+    int? reporterRating,
+    String? reporterFeedback,
+  }) {
     return Report(
       id: id,
       title: title,
@@ -48,6 +59,10 @@ class Report {
       likedBy: likedBy ?? this.likedBy,
       staffName: staffName,
       staffFeedback: staffFeedback,
+      needsReporterFeedback:
+          needsReporterFeedback ?? this.needsReporterFeedback,
+      reporterRating: reporterRating ?? this.reporterRating,
+      reporterFeedback: reporterFeedback ?? this.reporterFeedback,
       createdAt: createdAt,
       photoPaths: photoPaths,
     );
@@ -73,6 +88,20 @@ class ReportRepository {
     _reports[index] = _reports[index].copyWith(likedBy: likedBy);
   }
 
+  static void submitReporterFeedback({
+    required String reportId,
+    required int rating,
+    required String feedback,
+  }) {
+    final index = _reports.indexWhere((r) => r.id == reportId);
+    if (index == -1) return;
+    _reports[index] = _reports[index].copyWith(
+      needsReporterFeedback: false,
+      reporterRating: rating,
+      reporterFeedback: feedback.trim(),
+    );
+  }
+
   static List<Report> getByUser(String userId) {
     return _reports.where((r) => r.createdBy == userId).toList();
   }
@@ -95,7 +124,9 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
     _reports = ReportRepository.getAll();
   }
 
-  void _like(int index) {
+  void _like(String reportId) {
+    final index = _reports.indexWhere((r) => r.id == reportId);
+    if (index == -1) return;
     final r = _reports[index];
     final newLikedBy = List<String>.from(r.likedBy);
 
@@ -107,10 +138,20 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
       newLikedBy.add(_currentUser);
     }
 
+    final wasLiked = r.likedBy.contains(_currentUser);
     setState(() {
-      _reports[index] = r.copyWith(likedBy: newLikedBy);
+      ReportRepository.updateLikes(r.id, newLikedBy);
+      _reports = ReportRepository.getAll();
     });
-    ReportRepository.updateLikes(r.id, newLikedBy);
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(milliseconds: 900),
+        content: Text(
+          wasLiked ? 'Dukungan dibatalkan.' : 'Terima kasih sudah mendukung laporan ini.',
+        ),
+      ),
+    );
   }
 
   Future<void> _openCreate() async {
@@ -125,24 +166,55 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
 
   @override
   Widget build(BuildContext context) {
-    final topReports = [..._reports]..sort((a, b) => b.likes.compareTo(a.likes));
+    final topReports = [..._reports]
+      ..sort((a, b) {
+        final byLikes = b.likes.compareTo(a.likes);
+        if (byLikes != 0) return byLikes;
+        return b.createdAt.compareTo(a.createdAt);
+      });
     final top3 = topReports.take(3).toList();
+    final totalDukungan = _reports.fold<int>(0, (sum, r) => sum + r.likes);
+    final totalSelesai =
+        _reports.where((r) => r.status.toLowerCase() == 'selesai').length;
+    final totalDiproses =
+        _reports.where((r) => r.status.toLowerCase() == 'diproses').length;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: Colors.red.shade800,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.red.shade900, Colors.red.shade700],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: const Text('Pengaduan (Timeline)'),
       ),
       body: Column(
         children: [
-          _buildHeader(top3),
+          _buildHeader(
+            top3: top3,
+            totalDukungan: totalDukungan,
+            totalDiproses: totalDiproses,
+            totalSelesai: totalSelesai,
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
               itemCount: _reports.length,
               itemBuilder: (context, i) {
-                return _ReportCard(report: _reports[i], onLike: () => _like(i));
+                return _ReportCard(
+                  key: ValueKey(_reports[i].id),
+                  report: _reports[i],
+                  currentUser: _currentUser,
+                  onLike: () => _like(_reports[i].id),
+                );
               },
             ),
           ),
@@ -157,47 +229,61 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
     );
   }
 
-  Widget _buildHeader(List<Report> top3) {
+  Widget _buildHeader({
+    required List<Report> top3,
+    required int totalDukungan,
+    required int totalDiproses,
+    required int totalSelesai,
+  }) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-      color: const Color(0xFFF8FAFC),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Column(
         children: [
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
+              borderRadius: BorderRadius.circular(18),
+              gradient: LinearGradient(
+                colors: [Colors.red.shade900, Colors.red.shade700],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.red.shade200.withAlpha((0.6 * 255).round()),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Row(
               children: [
                 const Expanded(
                   child: Text(
-                    'Pantau semua pengaduan, beri dukungan, dan lihat progress terbaru secara real-time.',
-                    style: TextStyle(fontSize: 12, color: Colors.black54),
+                    'Pantau laporan kampus, beri dukungan, dan bantu percepat tindak lanjut.',
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
                   ),
                 ),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
+                    color: Colors.white.withAlpha((0.15 * 255).round()),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
-                    children: const [
+                    children: [
                       Icon(Icons.local_fire_department,
-                          size: 16, color: Color(0xFFB91C1C)),
-                      SizedBox(width: 4),
+                          size: 16, color: Colors.amber.shade300),
+                      const SizedBox(width: 4),
                       Text(
                         'Trending',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFB91C1C),
+                          color: Colors.white,
                         ),
                       ),
                     ],
@@ -207,18 +293,67 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
             ),
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 122,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: top3.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
-              itemBuilder: (_, i) {
-                final item = top3[i];
-                return _TopReportCard(report: item, rank: i + 1);
-              },
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _StatsChip(
+                  icon: Icons.thumb_up_alt_outlined,
+                  label: 'Total Dukungan',
+                  value: '$totalDukungan',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatsChip(
+                  icon: Icons.settings_suggest_outlined,
+                  label: 'Diproses',
+                  value: '$totalDiproses',
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _StatsChip(
+                  icon: Icons.task_alt_outlined,
+                  label: 'Selesai',
+                  value: '$totalSelesai',
+                ),
+              ),
+            ],
           ),
+          const SizedBox(height: 10),
+          if (top3.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+              ),
+              child: const Center(
+                child: Text(
+                  'Belum ada pelaporan yang bisa dirangking.',
+                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 122,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: top3.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 10),
+                itemBuilder: (_, i) {
+                  final item = top3[i];
+                  return _TopReportCard(
+                    key: ValueKey('${item.id}-${item.likes}'),
+                    report: item,
+                    rank: i + 1,
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );
@@ -227,9 +362,15 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
 
 class _ReportCard extends StatelessWidget {
   final Report report;
+  final String currentUser;
   final VoidCallback onLike;
 
-  const _ReportCard({required this.report, required this.onLike});
+  const _ReportCard({
+    super.key,
+    required this.report,
+    required this.currentUser,
+    required this.onLike,
+  });
 
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
@@ -391,33 +532,25 @@ class _ReportCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                // Cek apakah user sudah like
-                StatefulBuilder(
-                  builder: (context, setButtonState) {
-                    final isLiked =
-                        report.likedBy.contains('mahasiswa_aktif');
-                    return Row(
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            onLike();
-                            setButtonState(() {});
-                          },
-                          icon: Icon(
-                            isLiked
-                                ? Icons.thumb_up_alt
-                                : Icons.thumb_up_alt_outlined,
-                            size: 18,
-                            color: isLiked ? Colors.red.shade800 : null,
-                          ),
-                        ),
-                        Text(
-                          '${report.likes} dukungan',
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ],
-                    );
-                  },
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: onLike,
+                      icon: Icon(
+                        report.likedBy.contains(currentUser)
+                            ? Icons.thumb_up_alt
+                            : Icons.thumb_up_alt_outlined,
+                        size: 18,
+                        color: report.likedBy.contains(currentUser)
+                            ? Colors.red.shade800
+                            : null,
+                      ),
+                    ),
+                    Text(
+                      '${report.likes} dukungan',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -441,6 +574,61 @@ class _ReportCard extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _StatsChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _StatsChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: const Color(0xFF991B1B)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 10,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -498,7 +686,11 @@ class _TopReportCard extends StatelessWidget {
   final Report report;
   final int rank;
 
-  const _TopReportCard({required this.report, required this.rank});
+  const _TopReportCard({
+    super.key,
+    required this.report,
+    required this.rank,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -586,6 +778,7 @@ final List<Report> _dummyReports = [
     staffName: 'Pak Arif (Teknisi Listrik)',
     staffFeedback:
         'Tim sudah cek awal. Pergantian komponen dilakukan malam ini di luar jam kuliah.',
+    needsReporterFeedback: false,
     createdAt: DateTime(2026, 4, 6, 19, 30),
     photoPaths: const [
       'https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=1200&q=80',
@@ -604,6 +797,7 @@ final List<Report> _dummyReports = [
     likedBy: ['mahasiswa_2024', 'mahasiswa_aktif'],
     staffName: '',
     staffFeedback: '',
+    needsReporterFeedback: false,
     createdAt: DateTime(2026, 4, 5, 9, 15),
     photoPaths: const [
       'https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&w=1200&q=80',
@@ -622,11 +816,58 @@ final List<Report> _dummyReports = [
     staffName: 'Bu Rina (Koordinator Perpus)',
     staffFeedback:
         'Sudah diganti 5 kursi. Mohon info lagi bila ada kursi lain yang rusak.',
+    needsReporterFeedback: false,
     createdAt: DateTime(2026, 4, 3, 14, 45),
     photoPaths: const [
       'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80',
     ],
+  ),
+  Report(
+    id: 'REP-20260408-101000',
+    title: 'Kabel LAN Lab Komputer Terputus',
+    description:
+        'Koneksi internet di 10 PC baris tengah sering putus karena kabel LAN longgar/terputus.',
+    location: 'Lab Komputer 2, Gedung D',
+    category: 'Internet & Jaringan',
+    status: 'Menunggu',
+    createdBy: 'mahasiswa_aktif',
+    likedBy: ['mahasiswa_2024'],
+    staffName: '',
+    staffFeedback: '',
+    needsReporterFeedback: false,
+    createdAt: DateTime(2026, 4, 8, 10, 10),
+  ),
+  Report(
+    id: 'REP-20260407-083000',
+    title: 'Pintu Toilet Pria Lantai 1 Sulit Ditutup',
+    description:
+        'Engsel pintu sudah turun sehingga pintu seret dan tidak bisa tertutup rapat.',
+    location: 'Gedung C, Toilet Pria Lantai 1',
+    category: 'Sanitasi',
+    status: 'Diproses',
+    createdBy: 'mahasiswa_aktif',
+    likedBy: ['mahasiswa_2023', 'dosen_02'],
+    staffName: 'Pak Dimas (Teknisi Umum)',
+    staffFeedback: 'Engsel sedang dipesan, estimasi pemasangan besok pagi.',
+    needsReporterFeedback: false,
+    createdAt: DateTime(2026, 4, 7, 8, 30),
+  ),
+  Report(
+    id: 'REP-20260401-160500',
+    title: 'Proyektor Ruang Sidang Buram',
+    description:
+        'Output proyektor kurang fokus dan warna pudar, mengganggu presentasi kelas.',
+    location: 'Ruang Sidang Fakultas Teknik',
+    category: 'Fasilitas Belajar',
+    status: 'Selesai',
+    createdBy: 'mahasiswa_aktif',
+    likedBy: ['mahasiswa_2023', 'mahasiswa_2024', 'dosen_01'],
+    staffName: 'Bu Sinta (Tim Multimedia)',
+    staffFeedback:
+        'Lensa sudah dibersihkan dan lampu proyektor diganti. Mohon konfirmasi hasilnya.',
+    needsReporterFeedback: true,
+    createdAt: DateTime(2026, 4, 1, 16, 5),
   ),
 ];
 
