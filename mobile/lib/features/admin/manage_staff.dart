@@ -441,15 +441,6 @@ class _ManageStaffPageState extends State<ManageStaffPage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showAddStaffDialog,
-        backgroundColor: red,
-        icon: const Icon(Icons.person_add_outlined, color: Colors.white),
-        label: const Text(
-          'Tambah Staff',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
     );
   }
 }

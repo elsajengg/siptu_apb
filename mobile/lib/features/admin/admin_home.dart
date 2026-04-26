@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'verify_report.dart';
-import 'assign_staff.dart';
 import 'manage_staff.dart';
+import 'admin_profile.dart';
+import 'notification_page.dart';
 
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
@@ -17,6 +18,7 @@ class _AdminHomeState extends State<AdminHome> {
     const _AdminDashboard(),
     const VerifyReportPage(),
     const ManageStaffPage(),
+    const AdminProfilePage(),
   ];
 
   @override
@@ -32,15 +34,23 @@ class _AdminHomeState extends State<AdminHome> {
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),
+            activeIcon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.verified_outlined),
+            activeIcon: Icon(Icons.verified),
             label: 'Pengaduan',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.people_outline),
+            activeIcon: Icon(Icons.people),
             label: 'Staff',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
+            label: 'Akun',
           ),
         ],
       ),
@@ -51,7 +61,6 @@ class _AdminHomeState extends State<AdminHome> {
 class _AdminDashboard extends StatelessWidget {
   const _AdminDashboard();
 
-  // Dummy data
   static const int _total = 12;
   static const int _menunggu = 5;
   static const int _diproses = 4;
@@ -124,12 +133,11 @@ class _AdminDashboard extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {},
-          ),
-          IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {},
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotificationPage()),
+            ),
           ),
           const SizedBox(width: 4),
         ],
@@ -173,24 +181,24 @@ class _AdminDashboard extends StatelessWidget {
                         child: Icon(Icons.admin_panel_settings, color: red),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Admin • SIPTU',
+                              _greeting(),
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Super Admin',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'Kelola pengaduan dan staff fasilitas kampus.',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
+                                fontSize: 16,
                               ),
                             ),
                           ],
@@ -199,83 +207,35 @@ class _AdminDashboard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _HeroPill(label: 'Total', value: '$_total'),
-                      _HeroPill(label: 'Menunggu', value: '$_menunggu'),
-                      _HeroPill(label: 'Diproses', value: '$_diproses'),
-                      _HeroPill(label: 'Selesai', value: '$_selesai'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // ── Aksi Cepat ─────────────────────────────────────
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 6,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Aksi Cepat',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                  ),
-                  const SizedBox(height: 12),
+                  // Tanggal & Jam
                   Row(
                     children: [
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.add_circle_outline,
-                          color: red,
-                          title: 'Buat',
-                          subtitle: 'Laporan',
-                          onTap: () {},
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        color: Colors.white70,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formattedDate(),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.verified_outlined,
-                          color: const Color(0xFF2563EB),
-                          title: 'Verifikasi',
-                          subtitle: 'Masuk',
-                          onTap: () {},
-                        ),
+                      const SizedBox(width: 16),
+                      const Icon(
+                        Icons.access_time,
+                        color: Colors.white70,
+                        size: 14,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.assignment_ind_outlined,
-                          color: const Color(0xFFF97316),
-                          title: 'Tugaskan',
-                          subtitle: 'Staff',
-                          onTap: () {},
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _QuickAction(
-                          icon: Icons.download_outlined,
-                          color: const Color(0xFF16A34A),
-                          title: 'Export',
-                          subtitle: 'Data',
-                          onTap: () {},
+                      const SizedBox(width: 6),
+                      Text(
+                        _formattedTime(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -293,29 +253,29 @@ class _AdminDashboard extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               childAspectRatio: 1.7,
-              children: [
+              children: const [
                 _SummaryCard(
                   label: 'Total Tiket',
                   value: '$_total',
-                  color: const Color(0xFF2563EB),
+                  color: Color(0xFF2563EB),
                   icon: Icons.all_inbox_outlined,
                 ),
                 _SummaryCard(
                   label: 'Menunggu',
                   value: '$_menunggu',
-                  color: const Color(0xFFF97316),
+                  color: Color(0xFFF97316),
                   icon: Icons.pending_actions_outlined,
                 ),
                 _SummaryCard(
                   label: 'Diproses',
                   value: '$_diproses',
-                  color: const Color(0xFFEAB308),
+                  color: Color(0xFFEAB308),
                   icon: Icons.sync_outlined,
                 ),
                 _SummaryCard(
                   label: 'Selesai',
                   value: '$_selesai',
-                  color: const Color(0xFF16A34A),
+                  color: Color(0xFF16A34A),
                   icon: Icons.check_circle_outline,
                 ),
               ],
@@ -445,126 +405,6 @@ class _AdminDashboard extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 16),
-
-            // ── Kontrol & Insight ──────────────────────────────
-            const Text(
-              'Kontrol & Insight',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Filter cepat dan ringkasan aktivitas terbaru.',
-              style: TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-            const SizedBox(height: 10),
-
-            // Search & Filter bar
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: const Row(
-                      children: [
-                        Icon(Icons.search, size: 16, color: Colors.black45),
-                        SizedBox(width: 8),
-                        Text(
-                          'Cari judul / ID tiket',
-                          style: TextStyle(fontSize: 12, color: Colors.black45),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.filter_list, size: 16, color: Colors.black54),
-                      SizedBox(width: 6),
-                      Text('Filter', style: TextStyle(fontSize: 12)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Status legend chips
-            Wrap(
-              spacing: 8,
-              children: const [
-                _LegendChip(label: 'Menunggu', color: Color(0xFFF97316)),
-                _LegendChip(label: 'Diproses', color: Color(0xFFEAB308)),
-                _LegendChip(label: 'Selesai', color: Color(0xFF16A34A)),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Prioritas Hari Ini
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 6,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Prioritas Hari Ini',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                  ),
-                  const SizedBox(height: 12),
-                  _InsightRow(
-                    icon: Icons.warning_amber_rounded,
-                    color: const Color(0xFFF97316),
-                    title: '${_menunggu} tiket menunggu > 24 jam',
-                    subtitle: 'Butuh respon awal agar transparan.',
-                  ),
-                  const SizedBox(height: 10),
-                  const _InsightRow(
-                    icon: Icons.trending_up,
-                    color: Color(0xFF2563EB),
-                    title: 'Laporan trending meningkat',
-                    subtitle: 'Fokus pada yang dukungannya tinggi.',
-                  ),
-                  const SizedBox(height: 10),
-                  const _InsightRow(
-                    icon: Icons.verified_outlined,
-                    color: Color(0xFF16A34A),
-                    title: '2 tiket selesai kemarin',
-                    subtitle: 'Kirim update penutupan ke pelapor.',
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(height: 20),
           ],
         ),
@@ -573,89 +413,44 @@ class _AdminDashboard extends StatelessWidget {
   }
 }
 
+// ── Fungsi helper (di luar class) ────────────────────────────
+
+String _greeting() {
+  final hour = DateTime.now().hour;
+  if (hour >= 5 && hour < 12) return 'Selamat Pagi 🌤️';
+  if (hour >= 12 && hour < 15) return 'Selamat Siang ☀️';
+  if (hour >= 15 && hour < 18) return 'Selamat Sore 🌇';
+  return 'Selamat Malam 🌙';
+}
+
+String _formattedDate() {
+  final now = DateTime.now();
+  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'Mei',
+    'Jun',
+    'Jul',
+    'Agu',
+    'Sep',
+    'Okt',
+    'Nov',
+    'Des',
+  ];
+  return '${days[now.weekday - 1]}, ${now.day} ${months[now.month - 1]} ${now.year}';
+}
+
+String _formattedTime() {
+  final now = DateTime.now();
+  final h = now.hour.toString().padLeft(2, '0');
+  final m = now.minute.toString().padLeft(2, '0');
+  return '$h:$m WIB';
+}
+
 // ── Widget Helper ────────────────────────────────────────────
-
-class _HeroPill extends StatelessWidget {
-  final String label;
-  final String value;
-  const _HeroPill({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickAction extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _QuickAction({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(14),
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          color: color.withOpacity(0.08),
-          border: Border.all(color: color.withOpacity(0.18)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-            ),
-            Text(
-              subtitle,
-              style: const TextStyle(fontSize: 10, color: Colors.black54),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _SummaryCard extends StatelessWidget {
   final String label;
@@ -712,75 +507,6 @@ class _SummaryCard extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _LegendChip extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _LegendChip({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      avatar: CircleAvatar(backgroundColor: color, radius: 6),
-      label: Text(label, style: const TextStyle(fontSize: 11)),
-      backgroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-    );
-  }
-}
-
-class _InsightRow extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String title;
-  final String subtitle;
-
-  const _InsightRow({
-    required this.icon,
-    required this.color,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(icon, color: color, size: 18),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: const TextStyle(fontSize: 11, color: Colors.black54),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
