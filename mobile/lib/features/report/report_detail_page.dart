@@ -299,6 +299,8 @@ class _StaffCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasFeedback = report.staffFeedback.trim().isNotEmpty;
+    final hasReporterFeedback =
+        (report.reporterRating != null) || report.reporterFeedback.trim().isNotEmpty;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -330,6 +332,106 @@ class _StaffCard extends StatelessWidget {
               'Petugas sedang meninjau laporan ini. Mohon tunggu update selanjutnya.',
               style: TextStyle(fontSize: 13, color: Colors.black38, height: 1.5),
             ),
+          if (report.status.toLowerCase() == 'selesai') ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            const Text(
+              'Feedback Pengaju',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 15,
+                color: Color(0xFF1F2937),
+              ),
+            ),
+            const SizedBox(height: 10),
+            if (report.needsReporterFeedback)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.hourglass_top_rounded, size: 16, color: Color(0xFF92400E)),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Menunggu feedback dari pengaju untuk menutup case ini sepenuhnya.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF78350F), height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (hasReporterFeedback)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0FDF4),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.verified_rounded, size: 16, color: Color(0xFF166534)),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'Feedback sudah dikirim',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF166534),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (report.reporterRating != null)
+                          Row(
+                            children: List.generate(5, (index) {
+                              final active = (index + 1) <= (report.reporterRating ?? 0);
+                              return Icon(
+                                active ? Icons.star : Icons.star_border,
+                                size: 14,
+                                color: const Color(0xFFF59E0B),
+                              );
+                            }),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      report.reporterFeedback.trim().isEmpty
+                          ? 'Pengaju tidak menambahkan catatan.'
+                          : report.reporterFeedback,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF065F46),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Belum ada feedback dari pengaju.',
+                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ),
+          ],
         ],
       ),
     );

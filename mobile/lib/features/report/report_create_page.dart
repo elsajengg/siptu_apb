@@ -344,13 +344,13 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                           child: TextFormField(
                             controller: _locationCtrl,
                             decoration: const InputDecoration(
-                              hintText: "Lokasi",
+                              hintText: "Tempat",
                               border: InputBorder.none,
                               prefixIcon: Icon(Icons.place),
                             ),
                             validator: (v) =>
                                 (v == null || v.trim().isEmpty)
-                                    ? "Lokasi wajib diisi"
+                                    ? "Tempat wajib diisi"
                                     : null,
                           ),
                         ),
