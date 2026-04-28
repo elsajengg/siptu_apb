@@ -267,19 +267,9 @@ class _StaffDashboard extends StatelessWidget {
                 separatorBuilder: (_, __) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final task = sortedTasks[index];
-                  final p = task['priority'].toString().toLowerCase();
-                  final d = task['difficulty']?.toString().toLowerCase() ?? '';
-                  Color indicatorColor = Colors.transparent;
-                  if (p == 'urgent') {
-                    indicatorColor = d == 'berat' ? const Color(0xFF991B1B) : const Color(0xFFEF4444);
-                  } else if (p == 'tinggi') {
-                    indicatorColor = Colors.orange.shade700;
-                  }
 
                   return Container(
-                    decoration: BoxDecoration(
-                      border: Border(left: BorderSide(color: indicatorColor, width: 4)),
-                    ),
+                    decoration: const BoxDecoration(),
                     child: TweenAnimationBuilder(
                       duration: Duration(milliseconds: 400 + (index * 100)),
                       tween: Tween<double>(begin: 0, end: 1),
@@ -334,7 +324,13 @@ class _StaffDashboard extends StatelessWidget {
                           } else {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const UpdateStatusPage()),
+                              MaterialPageRoute(
+                                builder: (context) => UpdateStatusPage(
+                                  taskId: task['id'],
+                                  taskTitle: task['title'],
+                                  taskLocation: 'Lokasi Terlampir',
+                                ),
+                              ),
                             );
                           }
                         },

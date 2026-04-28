@@ -196,7 +196,13 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
                           } else {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const UpdateStatusPage()),
+                              MaterialPageRoute(
+                                builder: (context) => UpdateStatusPage(
+                                  taskId: task['id'],
+                                  taskTitle: task['title'],
+                                  taskLocation: task['location'],
+                                ),
+                              ),
                             );
                           }
                         },
