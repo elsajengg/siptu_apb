@@ -194,6 +194,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
             ),
           ),
         ),
+        leading: BackButton(color: Colors.white),
         title: const Text('Pengaduan (Timeline)'),
       ),
       body: Column(

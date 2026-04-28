@@ -19,6 +19,7 @@ class ReportDetailPage extends StatelessWidget {
         elevation: 0,
         foregroundColor: Colors.white,
         centerTitle: false,
+        leading: BackButton(color: Colors.white),
         title: const Text(
           'Detail Pengaduan',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),

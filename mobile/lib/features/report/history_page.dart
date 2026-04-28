@@ -241,7 +241,7 @@ class _HistoryPageState extends State<HistoryPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red.shade800,
-        title: const Text('Riwayat Laporan Saya'),
+        leading: BackButton(color: Colors.white),
         elevation: 0,
       ),
       body: Column(

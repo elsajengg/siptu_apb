@@ -54,6 +54,7 @@ class CompletedTasksPage extends StatelessWidget {
         backgroundColor: red,
         elevation: 0,
         centerTitle: false,
+        leading: BackButton(color: Colors.white),
         title: const Text(
           'Riwayat Perbaikan Selesai',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),

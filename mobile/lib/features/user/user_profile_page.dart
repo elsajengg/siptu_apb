@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import '../auth/login_page.dart';
-import 'completed_tasks_page.dart';
+import '../report/history_page.dart';
 
-class StaffProfilePage extends StatefulWidget {
-  const StaffProfilePage({super.key});
+class UserProfilePage extends StatefulWidget {
+  const UserProfilePage({super.key});
 
   @override
-  State<StaffProfilePage> createState() => _StaffProfilePageState();
+  State<UserProfilePage> createState() => _UserProfilePageState();
 }
 
-class _StaffProfilePageState extends State<StaffProfilePage> {
+class _UserProfilePageState extends State<UserProfilePage> {
   static const double _phi = 1.61803398875;
   bool _notificationsEnabled = true;
-  String _name = 'Budi Santoso';
-  String _position = 'Staff Teknisi Ahli • Fasilitas & Infrastruktur';
-  String _email = 'budi.santoso@telkomuniversity.ac.id';
+  String _name = 'Ahmad Rizki Pratama';
+  String _nim = 'Mahasiswa • 13120080';
+  String _email = 'ahmad.rizki@telkomuniversity.ac.id';
   String _phone = '+62 812-3456-7890';
 
   @override
@@ -32,7 +32,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
         elevation: 0,
         leading: BackButton(color: Colors.white),
         title: const Text(
-          'Profil Saya',
+          'Back',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
@@ -70,7 +70,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                   ),
                   SizedBox(height: 4 * _phi),
                   Text(
-                    _position,
+                    _nim,
                     style: TextStyle(
                       fontSize: 8 * _phi,
                       color: Colors.grey.shade600,
@@ -100,12 +100,12 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                 onTap: () => _showEditPhoneDialog(),
               ),
               _MenuTile(
-                icon: Icons.assignment_turned_in_rounded,
-                title: 'Riwayat Perbaikan Selesai',
+                icon: Icons.history_rounded,
+                title: 'Riwayat Laporan Saya',
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const CompletedTasksPage()),
+                    MaterialPageRoute(builder: (context) => const HistoryPage()),
                   );
                 },
               ),
@@ -133,7 +133,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                   child: const Icon(Icons.notifications_active_outlined, size: 20, color: Colors.blue),
                 ),
                 title: const Text(
-                  'Notifikasi Tugas',
+                  'Notifikasi Laporan',
                   style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 ),
                 value: _notificationsEnabled,
@@ -224,7 +224,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           Icon(Icons.verified_user, size: 14, color: red),
           const SizedBox(width: 8),
           Text(
-            'NIP: 19850612 201012 1 001',
+            'NIM: 13120080',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
@@ -257,7 +257,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
 
   void _showEditProfileDialog() {
     final nameCtrl = TextEditingController(text: _name);
-    final posCtrl = TextEditingController(text: _position);
+    final nimCtrl = TextEditingController(text: _nim);
     final emailCtrl = TextEditingController(text: _email);
     final phoneCtrl = TextEditingController(text: _phone);
 
@@ -272,7 +272,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
             children: [
               _buildEditField(nameCtrl, 'Nama Lengkap', Icons.person_outline),
               const SizedBox(height: 16),
-              _buildEditField(posCtrl, 'Posisi / Unit', Icons.work_outline),
+              _buildEditField(nimCtrl, 'NIM / Status', Icons.school_outlined),
               const SizedBox(height: 16),
               _buildEditField(emailCtrl, 'Email', Icons.alternate_email, type: TextInputType.emailAddress),
               const SizedBox(height: 16),
@@ -291,7 +291,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
             onPressed: () {
               setState(() {
                 _name = nameCtrl.text;
-                _position = posCtrl.text;
+                _nim = nimCtrl.text;
                 _email = emailCtrl.text;
                 _phone = phoneCtrl.text;
               });
@@ -471,19 +471,13 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
     );
   }
 
-  void _showTopup(BuildContext context, String title) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Fitur $title segera hadir!')),
-    );
-  }
-
   void _handleLogout(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Konfirmasi Logout'),
-        content: const Text('Apakah Anda yakin ingin keluar dari akun staf?'),
+        content: const Text('Apakah Anda yakin ingin keluar dari akun?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

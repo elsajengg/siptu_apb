@@ -357,6 +357,7 @@ class _NotificationPageState extends State<NotificationPage> {
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
         backgroundColor: red,
+        leading: BackButton(color: Colors.white),
         iconTheme: const IconThemeData(color: Colors.white),
         title: Row(
           children: [

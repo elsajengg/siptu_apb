@@ -491,6 +491,7 @@ class _ExportPageState extends State<ExportPage> {
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
         backgroundColor: red,
+        leading: BackButton(color: Colors.white),
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Export Data',

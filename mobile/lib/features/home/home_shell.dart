@@ -5,6 +5,7 @@ import '../report/notifications_page.dart';
 import '../report/history_page.dart';
 import '../auth/login_page.dart';
 import '../user/edit_profile.dart';
+import '../user/user_profile_page.dart';
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
@@ -31,7 +32,7 @@ class _HomeShellState extends State<HomeShell> {
       const ReportFeedPage(),
       const HistoryPage(),
       const NotificationsPage(),
-      _buildProfilePage(),
+      const UserProfilePage(),
     ];
 
     return Scaffold(
@@ -75,147 +76,6 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  Widget _buildProfilePage() {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        backgroundColor: Colors.red.shade800,
-        title: const Text('Profil Saya'),
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            /// 🔴 HEADER MERAH
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 30),
-              decoration: BoxDecoration(
-                color: Colors.red.shade800,
-                borderRadius: const BorderRadius.vertical(
-                  bottom: Radius.circular(20),
-                ),
-              ),
-              child: Column(
-                children: [
-                  /// 👤 FOTO
-                  const CircleAvatar(
-                    radius: 50,
-                    backgroundImage:
-                        NetworkImage("https://i.pravatar.cc/300"),
-                  ),
-                  const SizedBox(height: 12),
-
-                  /// 🧑 NAMA
-                  Text(
-                    _userName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-
-                  /// ✉️ EMAIL
-                  Text(
-                    _userEmail,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  const SizedBox(height: 4),
-
-                  /// 📱 PHONE
-                  Text(
-                    _userPhone,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            /// 📊 STATISTIK
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  _ProfileStat(title: "Laporan", value: "12"),
-                  _ProfileStat(title: "Diproses", value: "5"),
-                  _ProfileStat(title: "Selesai", value: "7"),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            /// 📋 MENU
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Column(
-                children: [
-                  _menuItem(
-                    Icons.edit,
-                    "Edit Profil",
-                    () async {
-                      final result = await Navigator.of(context).push<Map>(
-                        MaterialPageRoute(
-                          builder: (_) => EditProfilePage(
-                            name: _userName,
-                            email: _userEmail,
-                            phone: _userPhone,
-                          ),
-                        ),
-                      );
-
-                      if (result != null && mounted) {
-                        setState(() {
-                          _userName = result["name"] ?? _userName;
-                          _userEmail = result["email"] ?? _userEmail;
-                          _userPhone = result["phone"] ?? _userPhone;
-                        });
-                      }
-                    },
-                  ),
-                  _menuItem(
-                    Icons.notifications,
-                    "Notifikasi",
-                    () => setState(() => _index = 2),
-                  ),
-                  _menuItem(
-                    Icons.history,
-                    "Riwayat Laporan",
-                    () => setState(() => _index = 1),
-                  ),
-                  _menuItem(
-                    Icons.settings,
-                    "Pengaturan",
-                    () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Fitur pengaturan akan segera tersedia'),
-                        ),
-                      );
-                    },
-                  ),
-                  const Divider(height: 16),
-                  _menuItem(
-                    Icons.logout,
-                    "Logout",
-                    () => _showLogoutDialog(),
-                    isLogout: true,
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -235,10 +95,7 @@ class _HomeShellState extends State<HomeShell> {
                 (route) => false,
               );
             },
-            child: Text(
-              'Logout',
-              style: TextStyle(color: Colors.red.shade800),
-            ),
+            child: Text('Logout', style: TextStyle(color: Colors.red.shade800)),
           ),
         ],
       ),
@@ -253,10 +110,7 @@ class _HomeShellState extends State<HomeShell> {
     bool isLogout = false,
   }) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isLogout ? Colors.red : Colors.red.shade800,
-      ),
+      leading: Icon(icon, color: isLogout ? Colors.red : Colors.red.shade800),
       title: Text(
         title,
         style: TextStyle(
@@ -274,10 +128,7 @@ class _ProfileStat extends StatelessWidget {
   final String title;
   final String value;
 
-  const _ProfileStat({
-    required this.title,
-    required this.value,
-  });
+  const _ProfileStat({required this.title, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -302,10 +153,7 @@ class _ProfileStat extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black54,
-              ),
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ],
         ),
