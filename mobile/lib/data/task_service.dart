@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class CompletedTask {
   final String id;
@@ -7,7 +7,7 @@ class CompletedTask {
   final String date;
   final String status;
   final String note;
-  final List<File> images;
+  final List<XFile> images;
 
   CompletedTask({
     required this.id,

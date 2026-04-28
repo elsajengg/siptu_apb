@@ -1,11 +1,14 @@
-import 'dart:io';
+import 'dart:io' as io;
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'update_status.dart';
+import '../../data/task_service.dart';
 
 class TaskDetailPage extends StatelessWidget {
   final Map<String, dynamic> task;
-  final List<File>? localImages;
+  final List<XFile>? localImages;
   final String? customNote;
 
   const TaskDetailPage({
@@ -44,6 +47,9 @@ class TaskDetailPage extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => UpdateStatusPage(
+                    taskId: task['id'],
+                    taskTitle: task['title'],
+                    taskLocation: task['location'],
                     initialStatus: task['status'],
                     initialNote: customNote,
                     initialImages: localImages,
@@ -146,6 +152,13 @@ class TaskDetailPage extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildPhotoGrid(),
                   
+                  SizedBox(height: 32 * _phi),
+
+                  // ── Update History ──────────────────────────────
+                  _buildSectionTitle('IV. RIWAYAT PEMBARUAN'),
+                  const SizedBox(height: 16),
+                  _buildUpdateHistoryList(),
+
                   const SizedBox(height: 40),
 
                   // ── Official Footer/Seal ──────────────────────────
@@ -178,6 +191,179 @@ class TaskDetailPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildUpdateHistoryList() {
+    final updates = TaskService()
+        .completedTasks
+        .where((t) => t.id == task['id'])
+        .toList();
+
+    if (updates.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade100),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.info_outline, size: 16, color: Colors.black26),
+            SizedBox(width: 12),
+            Text(
+              'Belum ada riwayat pembaruan untuk tugas ini.',
+              style: TextStyle(fontSize: 12, color: Colors.black38),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: updates.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      itemBuilder: (context, index) {
+        final update = updates[index];
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Column(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade800,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(color: Colors.red.shade800.withOpacity(0.3), blurRadius: 4),
+                    ],
+                  ),
+                ),
+                if (index != updates.length - 1)
+                  Container(
+                    width: 2,
+                    height: 50, // Fixed height for simplicity in shrinkwrap
+                    color: Colors.grey.shade200,
+                  ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        update.status.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.red.shade800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      Text(
+                        update.date,
+                        style: const TextStyle(fontSize: 10, color: Colors.black26),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    update.note.isEmpty ? '(Tanpa catatan)' : update.note,
+                    style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
+                  ),
+                  if (update.images.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    InkWell(
+                      onTap: () => _showUpdateImages(context, update.images),
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          '📎 ${update.images.length} Lampiran foto',
+                          style: TextStyle(
+                            fontSize: 10, 
+                            color: Colors.blue.shade700, 
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showUpdateImages(BuildContext context, List<XFile> images) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            Flexible(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: images.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _buildImage(images[index]),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorImage() {
+    return Container(
+      height: 200,
+      color: Colors.grey.shade100,
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.broken_image_outlined, color: Colors.black26, size: 40),
+          SizedBox(height: 8),
+          Text('Gagal memuat gambar', style: TextStyle(color: Colors.black26, fontSize: 12)),
+        ],
       ),
     );
   }
@@ -255,9 +441,7 @@ class TaskDetailPage extends StatelessWidget {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(7),
-                child: kIsWeb 
-                   ? Image.network(localImages![index].path, fit: BoxFit.cover)
-                   : Image.file(localImages![index], fit: BoxFit.cover),
+                child: _buildImage(localImages![index]),
               ),
             );
           },
@@ -287,6 +471,42 @@ class TaskDetailPage extends StatelessWidget {
           child: Image.network(url, fit: BoxFit.cover),
         ),
       ),
+    );
+  }
+
+  Widget _buildImage(XFile file) {
+    if (kIsWeb) {
+      return FutureBuilder<Uint8List>(
+        future: file.readAsBytes(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Image.memory(
+              snapshot.data!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+            );
+          }
+          if (snapshot.hasError) {
+            return _buildErrorImage();
+          }
+          return Container(
+            height: 200,
+            color: Colors.grey.shade50,
+            child: const Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        },
+      );
+    }
+    return Image.file(
+      io.File(file.path),
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
     );
   }
 }
