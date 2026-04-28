@@ -206,7 +206,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
           ),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
               itemCount: _reports.length,
               itemBuilder: (context, i) {
                 return _ReportCard(
@@ -223,6 +223,8 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: Colors.red.shade800,
         onPressed: _openCreate,
+        elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         icon: const Icon(Icons.add),
         label: const Text('Buat Pengaduan'),
       ),
@@ -339,7 +341,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
             )
           else
             SizedBox(
-              height: 122,
+              height: 126,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: top3.length,
@@ -398,12 +400,13 @@ class _ReportCard extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
             BoxShadow(
-              color: Colors.black12,
-              blurRadius: 6,
-              offset: Offset(0, 3),
+              color: Colors.black.withAlpha((0.05 * 255).round()),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
             ),
           ],
         ),

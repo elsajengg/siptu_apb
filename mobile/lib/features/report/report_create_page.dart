@@ -154,6 +154,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   @override
   Widget build(BuildContext context) {
     final red = Colors.red.shade800;
+    final redDark = Colors.red.shade900;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -163,50 +164,79 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
           /// 🔴 HEADER GRADIENT
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 50, 16, 22),
+            padding: const EdgeInsets.fromLTRB(16, 50, 16, 26),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Colors.red.shade900, Colors.red.shade700],
+                colors: [redDark, red],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(25),
-              ),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+              boxShadow: [
+                BoxShadow(
+                  color: red.withAlpha((0.30 * 255).round()),
+                  blurRadius: 22,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            child: Row(
+            child: Column(
               children: [
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    "Buat Pengaduan",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        "Buat Pengaduan",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha((0.16 * 255).round()),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'Form Cepat',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 14),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  height: 6,
                   decoration: BoxDecoration(
-                    color: Colors.white.withAlpha((0.16 * 255).round()),
+                    color: Colors.white.withAlpha((0.18 * 255).round()),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: const Text(
-                    'Form Cepat',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                      ),
+                      const Expanded(child: SizedBox()),
+                    ],
                   ),
                 ),
               ],
@@ -215,15 +245,22 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
 
           Container(
             margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: const Color(0xFFE2E8F0)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha((0.03 * 255).round()),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: const Row(
               children: [
-                Icon(Icons.info_outline, size: 16, color: Colors.black54),
+                Icon(Icons.tips_and_updates_outlined, size: 16, color: Colors.black54),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -241,12 +278,17 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
               padding: const EdgeInsets.all(16),
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
                     boxShadow: [
-                      BoxShadow(color: Colors.grey.shade200, blurRadius: 10),
+                      BoxShadow(
+                        color: Colors.black.withAlpha((0.04 * 255).round()),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
                     ],
                   ),
 
@@ -272,13 +314,13 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEEF2FF),
+                                color: const Color(0xFFFEE2E2),
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               child: const Text(
                                 "Step 1 dari 1",
                                 style: TextStyle(
-                                  color: Color(0xFF3730A3),
+                                  color: Color(0xFF991B1B),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -406,16 +448,16 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                                 vertical: 10,
                               ),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFFF7ED),
+                                color: const Color(0xFFF3F4F6),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: const Color(0xFFFED7AA),
+                                  color: const Color(0xFFD1D5DB),
                                 ),
                               ),
                               child: Text(
                                 '${_photos.length}/6',
                                 style: const TextStyle(
-                                  color: Color(0xFFC2410C),
+                                  color: Color(0xFF374151),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -440,11 +482,20 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                                   children: [
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(12),
-                                      child: Image.file(
-                                        File(_photos[i].path),
+                                      child: Container(
                                         width: 120,
                                         height: 96,
-                                        fit: BoxFit.cover,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Image.file(
+                                            File(_photos[i].path),
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     Positioned(
@@ -481,22 +532,30 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                         /// BUTTON SUBMIT
                         SizedBox(
                           width: double.infinity,
-                          height: 50,
+                          height: 52,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
                               backgroundColor: red,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
+                                borderRadius: BorderRadius.circular(16),
                               ),
                             ),
                             onPressed: _submit,
-                            child: Text(
-                              _submitting ? "Mengirim..." : "Kirim Pengaduan",
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFFFFFFCC),
-                                fontWeight: FontWeight.w700,
-                              ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(_submitting ? Icons.hourglass_top_rounded : Icons.send_rounded, size: 18),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _submitting ? "Mengirim..." : "Kirim Pengaduan",
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -525,10 +584,10 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
 
   Widget _inputWrapper({required Widget child}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: child,
@@ -549,7 +608,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
         foregroundColor: const Color(0xFF0F172A),
         backgroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
@@ -561,10 +620,10 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
           width: 28,
           height: 28,
           decoration: BoxDecoration(
-            color: const Color(0xFFEEF2FF),
+            color: const Color(0xFFFEE2E2),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 16, color: const Color(0xFF3730A3)),
+          child: Icon(icon, size: 16, color: const Color(0xFF991B1B)),
         ),
         const SizedBox(width: 8),
         Text(

@@ -38,22 +38,38 @@ class _HomeShellState extends State<HomeShell> {
       body: pages[_index],
       bottomNavigationBar: SafeArea(
         top: false,
-        child: NavigationBar(
-          height: 72,
-          selectedIndex: _index,
-          onDestinationSelected: (i) => setState(() => _index = i),
-          backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFFEE2E2),
-          elevation: 3,
-          destinations: _tabMeta
-              .map(
-                (tab) => NavigationDestination(
-                  icon: Icon(tab.icon),
-                  selectedIcon: Icon(tab.icon, color: Colors.red.shade800),
-                  label: tab.label,
-                ),
-              )
-              .toList(),
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha((0.09 * 255).round()),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(22),
+            child: NavigationBar(
+              height: 70,
+              selectedIndex: _index,
+              onDestinationSelected: (i) => setState(() => _index = i),
+              backgroundColor: Colors.white,
+              indicatorColor: const Color(0xFFFEE2E2),
+              labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+              destinations: _tabMeta
+                  .map(
+                    (tab) => NavigationDestination(
+                      icon: Icon(tab.icon),
+                      selectedIcon: Icon(tab.icon, color: Colors.red.shade800),
+                      label: tab.label,
+                    ),
+                  )
+                  .toList(),
+            ),
+          ),
         ),
       ),
     );
