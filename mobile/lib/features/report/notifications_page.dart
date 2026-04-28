@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../home/home_shell.dart';
 
 /// Model untuk notifikasi
 class Notification {
@@ -93,7 +94,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red.shade800,
-        leading: BackButton(color: Colors.white),
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeShell()),
+            (route) => false,
+          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
         title: const Text('Notifikasi'),
         elevation: 0,
         actions: [

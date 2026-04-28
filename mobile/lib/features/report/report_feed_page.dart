@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'report_create_page.dart';
 import 'report_detail_page.dart';
+import '../home/home_shell.dart';
 
 /// Model sederhana untuk laporan (feed/forum)
 class Report {
@@ -69,8 +70,7 @@ class Report {
   }
 
   int get likes => likedBy.length;
-  String? get coverPhotoPath =>
-      photoPaths.isEmpty ? null : photoPaths.first;
+  String? get coverPhotoPath => photoPaths.isEmpty ? null : photoPaths.first;
 }
 
 class ReportRepository {
@@ -116,7 +116,8 @@ class ReportFeedPage extends StatefulWidget {
 
 class _ReportFeedPageState extends State<ReportFeedPage> {
   late List<Report> _reports;
-  final String _currentUser = 'mahasiswa_aktif'; // Simulate current logged-in user
+  final String _currentUser =
+      'mahasiswa_aktif'; // Simulate current logged-in user
 
   @override
   void initState() {
@@ -148,7 +149,9 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
       SnackBar(
         duration: const Duration(milliseconds: 900),
         content: Text(
-          wasLiked ? 'Dukungan dibatalkan.' : 'Terima kasih sudah mendukung laporan ini.',
+          wasLiked
+              ? 'Dukungan dibatalkan.'
+              : 'Terima kasih sudah mendukung laporan ini.',
         ),
       ),
     );
@@ -174,10 +177,12 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
       });
     final top3 = topReports.take(3).toList();
     final totalDukungan = _reports.fold<int>(0, (sum, r) => sum + r.likes);
-    final totalSelesai =
-        _reports.where((r) => r.status.toLowerCase() == 'selesai').length;
-    final totalDiproses =
-        _reports.where((r) => r.status.toLowerCase() == 'diproses').length;
+    final totalSelesai = _reports
+        .where((r) => r.status.toLowerCase() == 'selesai')
+        .length;
+    final totalDiproses = _reports
+        .where((r) => r.status.toLowerCase() == 'diproses')
+        .length;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -194,8 +199,6 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
             ),
           ),
         ),
-        leading: BackButton(color: Colors.white),
-        title: const Text('Pengaduan (Timeline)'),
       ),
       body: Column(
         children: [
@@ -226,8 +229,8 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
         onPressed: _openCreate,
         elevation: 1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: const Icon(Icons.add),
-        label: const Text('Buat Pengaduan'),
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Buat Pengaduan', style: TextStyle(color: Colors.white)),
       ),
     );
   }
@@ -270,16 +273,21 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withAlpha((0.15 * 255).round()),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.local_fire_department,
-                          size: 16, color: Colors.amber.shade300),
+                      Icon(
+                        Icons.local_fire_department,
+                        size: 16,
+                        color: Colors.amber.shade300,
+                      ),
                       const SizedBox(width: 4),
                       Text(
                         'Trending',
@@ -645,7 +653,8 @@ class _ReportPhoto extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isUrl = photoPath.startsWith('http://') || photoPath.startsWith('https://');
+    final isUrl =
+        photoPath.startsWith('http://') || photoPath.startsWith('https://');
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: AspectRatio(
@@ -690,11 +699,7 @@ class _TopReportCard extends StatelessWidget {
   final Report report;
   final int rank;
 
-  const _TopReportCard({
-    super.key,
-    required this.report,
-    required this.rank,
-  });
+  const _TopReportCard({super.key, required this.report, required this.rank});
 
   @override
   Widget build(BuildContext context) {
@@ -715,8 +720,7 @@ class _TopReportCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.white.withAlpha((0.2 * 255).round()),
                   borderRadius: BorderRadius.circular(20),
@@ -731,8 +735,11 @@ class _TopReportCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              const Icon(Icons.thumb_up_alt_rounded,
-                  size: 16, color: Colors.white),
+              const Icon(
+                Icons.thumb_up_alt_rounded,
+                size: 16,
+                color: Colors.white,
+              ),
               const SizedBox(width: 4),
               Text(
                 '${report.likes}',
@@ -757,10 +764,7 @@ class _TopReportCard extends StatelessWidget {
           const Spacer(),
           Text(
             '@${report.createdBy}',
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-            ),
+            style: const TextStyle(color: Colors.white70, fontSize: 11),
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../auth/login_page.dart';
 import '../report/history_page.dart';
+import '../home/home_shell.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -30,9 +31,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
       appBar: AppBar(
         backgroundColor: red,
         elevation: 0,
-        leading: BackButton(color: Colors.white),
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeShell()),
+            (route) => false,
+          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
         title: const Text(
-          'Back',
+          'Profil Saya',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),

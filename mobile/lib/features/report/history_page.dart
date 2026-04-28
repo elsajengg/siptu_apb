@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'report_feed_page.dart';
 import 'report_detail_page.dart';
+import '../home/home_shell.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -241,7 +242,13 @@ class _HistoryPageState extends State<HistoryPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.red.shade800,
-        leading: BackButton(color: Colors.white),
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeShell()),
+            (route) => false,
+          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
         elevation: 0,
       ),
       body: Column(

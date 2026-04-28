@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../auth/login_page.dart';
 import 'completed_tasks_page.dart';
+import '../home/home_shell.dart';
 
 class StaffProfilePage extends StatefulWidget {
   const StaffProfilePage({super.key});
@@ -30,7 +31,13 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
       appBar: AppBar(
         backgroundColor: red,
         elevation: 0,
-        leading: BackButton(color: Colors.white),
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeShell()),
+            (route) => false,
+          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
         title: const Text(
           'Profil Saya',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

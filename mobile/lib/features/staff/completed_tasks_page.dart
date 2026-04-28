@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'task_detail_page.dart';
 import '../../data/task_service.dart';
+import '../home/home_shell.dart';
 
 class CompletedTasksPage extends StatelessWidget {
   const CompletedTasksPage({super.key});
@@ -54,7 +55,13 @@ class CompletedTasksPage extends StatelessWidget {
         backgroundColor: red,
         elevation: 0,
         centerTitle: false,
-        leading: BackButton(color: Colors.white),
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeShell()),
+            (route) => false,
+          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
         title: const Text(
           'Riwayat Perbaikan Selesai',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),

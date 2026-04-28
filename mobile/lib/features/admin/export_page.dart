@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'verify_report.dart';
+import '../home/home_shell.dart';
 
 class ExportPage extends StatefulWidget {
   const ExportPage({super.key});
@@ -491,7 +492,13 @@ class _ExportPageState extends State<ExportPage> {
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
         backgroundColor: red,
-        leading: BackButton(color: Colors.white),
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeShell()),
+            (route) => false,
+          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text(
           'Export Data',

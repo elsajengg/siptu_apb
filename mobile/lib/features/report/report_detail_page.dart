@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'report_feed_page.dart';
+import '../home/home_shell.dart';
 
 class ReportDetailPage extends StatelessWidget {
   final Report report;
@@ -19,7 +20,13 @@ class ReportDetailPage extends StatelessWidget {
         elevation: 0,
         foregroundColor: Colors.white,
         centerTitle: false,
-        leading: BackButton(color: Colors.white),
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeShell()),
+            (route) => false,
+          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
         title: const Text(
           'Detail Pengaduan',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
