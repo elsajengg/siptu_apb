@@ -3,6 +3,7 @@ import 'verify_report.dart';
 import 'manage_staff.dart';
 import 'admin_profile.dart';
 import 'notification_page.dart';
+import 'all_reports_page.dart'; // ← import baru
 
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
@@ -14,12 +15,22 @@ class AdminHome extends StatefulWidget {
 class _AdminHomeState extends State<AdminHome> {
   int _index = 0;
 
-  final List<Widget> _pages = [
-    const _AdminDashboard(),
-    const VerifyReportPage(),
-    const ManageStaffPage(),
-    const AdminProfilePage(),
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      const _AdminDashboard(),
+      VerifyReportPage(onBack: _goToDashboard),
+      ManageStaffPage(onBack: _goToDashboard),
+      AdminProfilePage(onBack: _goToDashboard),
+    ];
+  }
+
+  void _goToDashboard() {
+    setState(() => _index = 0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +218,6 @@ class _AdminDashboard extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  // Tanggal & Jam
                   Row(
                     children: [
                       const Icon(
@@ -322,12 +332,21 @@ class _AdminDashboard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Text(
-                              'Lihat semua',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: red,
-                                fontWeight: FontWeight.w600,
+                            // ── PERUBAHAN DI SINI ──────────────
+                            GestureDetector(
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AllReportsPage(),
+                                ),
+                              ),
+                              child: Text(
+                                'Lihat semua',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: red,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
                           ],
@@ -413,7 +432,7 @@ class _AdminDashboard extends StatelessWidget {
   }
 }
 
-// ── Fungsi helper (di luar class) ────────────────────────────
+// ── Fungsi helper ─────────────────────────────────────────────
 
 String _greeting() {
   final hour = DateTime.now().hour;
@@ -450,7 +469,7 @@ String _formattedTime() {
   return '$h:$m WIB';
 }
 
-// ── Widget Helper ────────────────────────────────────────────
+// ── Widget Helper ─────────────────────────────────────────────
 
 class _SummaryCard extends StatelessWidget {
   final String label;

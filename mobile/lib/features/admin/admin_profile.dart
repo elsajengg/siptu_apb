@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import '../auth/login_page.dart';
 
 class AdminProfilePage extends StatefulWidget {
-  const AdminProfilePage({super.key});
+  final VoidCallback? onBack;
+  const AdminProfilePage({super.key, this.onBack});
 
   @override
   State<AdminProfilePage> createState() => _AdminProfilePageState();
 }
 
 class _AdminProfilePageState extends State<AdminProfilePage> {
-  // ── Data dummy admin ─────────────────────────────────────────
   String _name = 'Super Admin';
   String _position = 'Administrator • SIPTU';
   String _email = 'admin@telkomuniversity.ac.id';
@@ -19,7 +19,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
 
   final Color _red = Colors.red.shade800;
 
-  // ── Edit Profil ──────────────────────────────────────────────
   void _showEditProfileDialog() {
     final nameCtrl = TextEditingController(text: _name);
     final posCtrl = TextEditingController(text: _position);
@@ -106,10 +105,8 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     );
   }
 
-  // ── Edit Email ───────────────────────────────────────────────
   void _showEditEmailDialog() {
     final emailCtrl = TextEditingController(text: _email);
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -149,10 +146,8 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     );
   }
 
-  // ── Edit No. Telepon ─────────────────────────────────────────
   void _showEditPhoneDialog() {
     final phoneCtrl = TextEditingController(text: _phone);
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -192,7 +187,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     );
   }
 
-  // ── Ganti Kata Sandi ─────────────────────────────────────────
   void _showChangePasswordDialog() {
     final oldPassCtrl = TextEditingController();
     final newPassCtrl = TextEditingController();
@@ -267,7 +261,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     );
   }
 
-  // ── Logout ───────────────────────────────────────────────────
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -309,7 +302,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 
-  // ── Form Field Helper ────────────────────────────────────────
   Widget _buildFormField({
     required TextEditingController controller,
     required String label,
@@ -346,9 +338,15 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
             expandedHeight: 220,
             pinned: true,
             backgroundColor: _red,
-            iconTheme: const IconThemeData(color: Colors.white),
+            // ── Tombol Back ke Dashboard ──────────────────────
+            leading: widget.onBack != null
+                ? IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: widget.onBack,
+                  )
+                : null,
+            automaticallyImplyLeading: false,
             actions: [
-              // Tombol edit profil di kanan atas
               Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: CircleAvatar(
@@ -374,7 +372,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const SizedBox(height: 40),
-                    // Avatar
                     Container(
                       width: 90,
                       height: 90,
@@ -402,11 +399,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
             ),
           ),
 
-          // ── Body ─────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Column(
               children: [
-                // Nama & Role
                 Container(
                   width: double.infinity,
                   color: Colors.white,
@@ -431,7 +426,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 10),
-                      // Badge ID Admin
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 14,
@@ -461,10 +455,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
-                // ── Informasi Akun ───────────────────────────
                 _SectionLabel(label: 'Informasi Akun'),
                 Container(
                   color: Colors.white,
@@ -486,10 +477,7 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 12),
-
-                // ── Pengaturan & Keamanan ────────────────────
                 _SectionLabel(label: 'Pengaturan & Keamanan'),
                 Container(
                   color: Colors.white,
@@ -501,7 +489,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         onTap: _showChangePasswordDialog,
                       ),
                       const Divider(height: 1, indent: 56),
-                      // Toggle Notifikasi Pengaduan
                       Padding(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -542,7 +529,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         ),
                       ),
                       const Divider(height: 1, indent: 56),
-                      // Tombol Keluar
                       ListTile(
                         leading: Container(
                           width: 40,
@@ -571,7 +557,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 24),
               ],
             ),
@@ -581,8 +566,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
     );
   }
 }
-
-// ── Widget Helper ─────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String label;

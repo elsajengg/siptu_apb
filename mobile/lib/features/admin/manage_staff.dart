@@ -17,7 +17,8 @@ class StaffData {
 }
 
 class ManageStaffPage extends StatefulWidget {
-  const ManageStaffPage({super.key});
+  final VoidCallback? onBack;
+  const ManageStaffPage({super.key, this.onBack});
 
   @override
   State<ManageStaffPage> createState() => _ManageStaffPageState();
@@ -268,6 +269,14 @@ class _ManageStaffPageState extends State<ManageStaffPage> {
       appBar: AppBar(
         backgroundColor: red,
         elevation: 0,
+        // ── Tombol Back ke Dashboard ──────────────────────────
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: widget.onBack,
+              )
+            : null,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Manajemen Staff',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
@@ -283,7 +292,6 @@ class _ManageStaffPageState extends State<ManageStaffPage> {
       ),
       body: Column(
         children: [
-          // Header info
           Container(
             width: double.infinity,
             margin: const EdgeInsets.all(16),
@@ -320,8 +328,6 @@ class _ManageStaffPageState extends State<ManageStaffPage> {
               ],
             ),
           ),
-
-          // List Staff
           Expanded(
             child: _staffList.isEmpty
                 ? const Center(

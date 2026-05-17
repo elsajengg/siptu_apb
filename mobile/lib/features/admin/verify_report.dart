@@ -72,10 +72,11 @@ class StaffOption {
   });
 }
 
-enum FilterDay { hariIni, kemarin, tujuhHari, custom }
+enum FilterDay { hariIni, kemarin, tujuhHari }
 
 class VerifyReportPage extends StatefulWidget {
-  const VerifyReportPage({super.key});
+  final VoidCallback? onBack;
+  const VerifyReportPage({super.key, this.onBack});
 
   @override
   State<VerifyReportPage> createState() => _VerifyReportPageState();
@@ -85,7 +86,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   FilterDay _selectedFilter = FilterDay.hariIni;
-  DateTime? _customDate;
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -225,14 +225,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
           return reportDate == today.subtract(const Duration(days: 1));
         case FilterDay.tujuhHari:
           return reportDate.isAfter(today.subtract(const Duration(days: 7)));
-        case FilterDay.custom:
-          if (_customDate == null) return true;
-          final custom = DateTime(
-            _customDate!.year,
-            _customDate!.month,
-            _customDate!.day,
-          );
-          return reportDate == custom;
       }
     }).toList();
   }
@@ -257,31 +249,8 @@ class _VerifyReportPageState extends State<VerifyReportPage>
   List<ReportItem> get _reject =>
       _filteredReports.where((r) => r.status == 'reject').toList();
 
-  Future<void> _pickCustomDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2024),
-      lastDate: DateTime.now(),
-      builder: (context, child) => Theme(
-        data: Theme.of(context).copyWith(
-          colorScheme: ColorScheme.light(primary: Colors.red.shade800),
-        ),
-        child: child!,
-      ),
-    );
-    if (picked != null) {
-      setState(() {
-        _customDate = picked;
-        _selectedFilter = FilterDay.custom;
-      });
-    }
-  }
-
-  // ── Bottom Sheet: Terima + Tugaskan Staff ────────────────────
   void _showTerimaBottomSheet(ReportItem report) {
     StaffOption? selectedStaff;
-
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -290,7 +259,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
         return StatefulBuilder(
           builder: (context, setSheetState) {
             final red = Colors.red.shade800;
-
             return Container(
               height: MediaQuery.of(context).size.height * 0.75,
               decoration: const BoxDecoration(
@@ -748,11 +716,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
         return 'Kemarin';
       case FilterDay.tujuhHari:
         return '7 Hari';
-      case FilterDay.custom:
-        if (_customDate != null) {
-          return '${_customDate!.day}/${_customDate!.month}/${_customDate!.year}';
-        }
-        return 'Pilih Tanggal';
     }
   }
 
@@ -765,11 +728,18 @@ class _VerifyReportPageState extends State<VerifyReportPage>
       appBar: AppBar(
         backgroundColor: red,
         elevation: 0,
+        // ── Tombol Back ke Dashboard ──────────────────────────
+        leading: widget.onBack != null
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: widget.onBack,
+              )
+            : null,
+        automaticallyImplyLeading: false,
         title: const Text(
           'Manajemen Pengaduan',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        // ── Tombol Export di AppBar ──────────────────────────
         actions: [
           IconButton(
             icon: const Icon(Icons.download_outlined, color: Colors.white),
@@ -798,7 +768,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
       ),
       body: Column(
         children: [
-          // ── Search Bar ─────────────────────────────────────────
           Container(
             color: Colors.white,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -847,8 +816,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
               ),
             ),
           ),
-
-          // ── Filter Bar ─────────────────────────────────────────
           Container(
             width: double.infinity,
             color: Colors.white,
@@ -893,13 +860,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
                           () => _selectedFilter = FilterDay.tujuhHari,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      _FilterChip(
-                        label: '📅 Pilih Tanggal',
-                        isSelected: _selectedFilter == FilterDay.custom,
-                        color: red,
-                        onTap: _pickCustomDate,
-                      ),
                     ],
                   ),
                 ),
@@ -936,8 +896,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
             ),
           ),
           const Divider(height: 1),
-
-          // ── Tab Content ────────────────────────────────────────
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -988,7 +946,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
         ),
       );
     }
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: reports.length,
@@ -1032,7 +989,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
         ),
       );
     }
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: reports.length,
@@ -1047,8 +1003,6 @@ class _VerifyReportPageState extends State<VerifyReportPage>
     );
   }
 }
-
-// ── Widget Helper ─────────────────────────────────────────────
 
 class _FilterChip extends StatelessWidget {
   final String label;
@@ -1144,9 +1098,8 @@ class _ReportCard extends StatelessWidget {
         spans.add(TextSpan(text: text.substring(start), style: baseStyle));
         break;
       }
-      if (idx > start) {
+      if (idx > start)
         spans.add(TextSpan(text: text.substring(start, idx), style: baseStyle));
-      }
       spans.add(
         TextSpan(
           text: text.substring(idx, idx + searchQuery.length),
@@ -1165,7 +1118,6 @@ class _ReportCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final highlightColor = Colors.red.shade800;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1379,9 +1331,8 @@ class _DoneCard extends StatelessWidget {
         spans.add(TextSpan(text: text.substring(start), style: baseStyle));
         break;
       }
-      if (idx > start) {
+      if (idx > start)
         spans.add(TextSpan(text: text.substring(start, idx), style: baseStyle));
-      }
       spans.add(
         TextSpan(
           text: text.substring(idx, idx + searchQuery.length),
@@ -1400,7 +1351,6 @@ class _DoneCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final highlightColor = Colors.red.shade800;
-
     return GestureDetector(
       onTap: onTap,
       child: Container(
