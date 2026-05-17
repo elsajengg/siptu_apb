@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../home/home_shell.dart';
 
 enum NotifType { laporanBaru, laporanSelesai }
 
@@ -357,6 +358,13 @@ class _NotificationPageState extends State<NotificationPage> {
       backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
         backgroundColor: red,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeShell()),
+            (route) => false,
+          ),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         title: Row(
           children: [
