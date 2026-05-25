@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "842866836206",
+    "project_id": "tugas-besar-apb-siptu",
+    "storage_bucket": "tugas-besar-apb-siptu.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:842866836206:android:942fccebbf17bfa758a9ff",
+        "android_client_info": {
+          "package_name": "com.example.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDhENnr5vdDmyVNA3pTQpCgk-eN5bsQXkc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
