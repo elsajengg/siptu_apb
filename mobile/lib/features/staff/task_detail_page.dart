@@ -226,7 +226,7 @@ class TaskDetailPage extends StatelessWidget {
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: updates.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      separatorBuilder: (_, _) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
         final update = updates[index];
         return Row(
@@ -242,7 +242,7 @@ class TaskDetailPage extends StatelessWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white, width: 2),
                     boxShadow: [
-                      BoxShadow(color: Colors.red.shade800.withOpacity(0.3), blurRadius: 4),
+                      BoxShadow(color: Colors.red.shade800.withValues(alpha: 0.3), blurRadius: 4),
                     ],
                   ),
                 ),
@@ -337,7 +337,7 @@ class TaskDetailPage extends StatelessWidget {
                   shrinkWrap: true,
                   padding: const EdgeInsets.all(16),
                   itemCount: images.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(12),
@@ -431,7 +431,7 @@ class TaskDetailPage extends StatelessWidget {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: localImages!.length,
-          separatorBuilder: (_, __) => const SizedBox(width: 12),
+          separatorBuilder: (_, _) => const SizedBox(width: 12),
           itemBuilder: (context, index) {
             return Container(
               width: 200,

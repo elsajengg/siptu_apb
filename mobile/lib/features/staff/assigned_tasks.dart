@@ -92,7 +92,7 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _months.length,
-                    separatorBuilder: (_, __) => SizedBox(width: 8 * _phi),
+                    separatorBuilder: (_, _) => SizedBox(width: 8 * _phi),
                     itemBuilder: (context, index) {
                       final month = _months[index];
                       final isSelected = _selectedMonth == month;
@@ -102,7 +102,7 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
                         onSelected: (selected) {
                           if (selected) setState(() => _selectedMonth = month);
                         },
-                        selectedColor: red.withOpacity(0.15),
+                        selectedColor: red.withValues(alpha: 0.15),
                         backgroundColor: Colors.white,
                         padding: EdgeInsets.symmetric(horizontal: 8 * _phi),
                         shape: RoundedRectangleBorder(

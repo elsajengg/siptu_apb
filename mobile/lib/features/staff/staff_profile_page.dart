@@ -134,7 +134,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                 secondary: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.notifications_active_outlined, size: 20, color: Colors.blue),
@@ -162,6 +162,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
   }
 
   Widget _buildBanner(double height, Color red) {
+    final overlap = (height / _phi) / (_phi * _phi);
     return Container(
       width: double.infinity,
       height: height,
@@ -179,12 +180,13 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
             painter: _BannerPainter(),
           ),
           Positioned(
-            top: 50,
-            right: 20,
+            bottom: overlap,
+            right: 24,
             child: GestureDetector(
               onTap: () => _showEditProfileDialog(),
               child: CircleAvatar(
-                backgroundColor: Colors.white.withOpacity(0.1),
+                radius: 22,
+                backgroundColor: Colors.white.withValues(alpha: 0.15),
                 child: const Icon(Icons.edit, color: Colors.white, size: 20),
               ),
             ),
@@ -201,7 +203,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
         border: Border.all(color: Colors.white, width: 4),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08), 
+            color: Colors.black.withValues(alpha: 0.08), 
             blurRadius: 20, 
             offset: const Offset(0, 10)
           ),
@@ -211,7 +213,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
         radius: radius,
         backgroundColor: Colors.grey.shade100,
         child: ClipOval(
-          child: Icon(Icons.person, size: radius * 1.2, color: red.withOpacity(0.4)),
+          child: Icon(Icons.person, size: radius * 1.2, color: red.withValues(alpha: 0.4)),
         ),
       ),
     );
@@ -221,9 +223,9 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: red.withOpacity(0.08),
+        color: red.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: red.withOpacity(0.12)),
+        border: Border.all(color: red.withValues(alpha: 0.12)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -336,7 +338,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -478,12 +480,6 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
     );
   }
 
-  void _showTopup(BuildContext context, String title) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Fitur $title segera hadir!')),
-    );
-  }
-
   void _handleLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -518,7 +514,6 @@ class _MenuTile extends StatelessWidget {
   final String? subtitle;
   final Color? color;
   final VoidCallback onTap;
-  final bool showChevron;
 
   const _MenuTile({
     required this.icon,
@@ -526,7 +521,6 @@ class _MenuTile extends StatelessWidget {
     this.subtitle,
     this.color,
     required this.onTap,
-    this.showChevron = true,
   });
 
   @override
@@ -536,7 +530,7 @@ class _MenuTile extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: (color ?? Colors.grey.shade700).withOpacity(0.08),
+          color: (color ?? Colors.grey.shade700).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: color ?? Colors.grey.shade700, size: 20),
@@ -555,9 +549,7 @@ class _MenuTile extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: Colors.black45),
             )
           : null,
-      trailing: showChevron
-          ? const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.black26)
-          : null,
+      trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.black26),
     );
   }
 }
@@ -567,7 +559,7 @@ class _BannerPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.06)
+      ..color = Colors.white.withValues(alpha: 0.06)
       ..style = PaintingStyle.fill;
 
     // Abstract circles based on phi

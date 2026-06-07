@@ -141,7 +141,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   onSelected: (selected) {
                     if (selected) setState(() => _selectedStatus = status);
                   },
-                  selectedColor: red.withOpacity(0.15),
+                  selectedColor: red.withValues(alpha: 0.15),
                   backgroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   shape: RoundedRectangleBorder(
@@ -186,7 +186,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _images.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemBuilder: (context, index) {
                     return Stack(
                       children: [
@@ -296,7 +296,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: red,
                   elevation: 4,
-                  shadowColor: red.withOpacity(0.4),
+                  shadowColor: red.withValues(alpha: 0.4),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 child: const Text(
@@ -329,7 +329,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: updates.length,
-        separatorBuilder: (_, __) => const Divider(height: 16, thickness: 0.5),
+        separatorBuilder: (_, _) => const Divider(height: 16, thickness: 0.5),
         itemBuilder: (context, index) {
           final update = updates[index];
           return Column(

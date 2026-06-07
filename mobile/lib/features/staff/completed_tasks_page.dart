@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'task_detail_page.dart';
 import '../../data/task_service.dart';
-import '../home/home_shell.dart';
-
 class CompletedTasksPage extends StatelessWidget {
   const CompletedTasksPage({super.key});
 
@@ -23,7 +21,7 @@ class CompletedTasksPage extends StatelessWidget {
       'localImages': t.images,
     }).toList();
 
-    final List<Map<String, dynamic>> _mockTasks = [
+    final List<Map<String, dynamic>> mockTasks = [
       {
         'id': 'TGS-010',
         'title': 'Perbaikan AC Ruang 302',
@@ -47,7 +45,7 @@ class CompletedTasksPage extends StatelessWidget {
       },
     ];
 
-    final _allTasks = [...realTasks, ..._mockTasks];
+    final allTasks = [...realTasks, ...mockTasks];
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -56,10 +54,7 @@ class CompletedTasksPage extends StatelessWidget {
         elevation: 0,
         centerTitle: false,
         leading: IconButton(
-          onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const HomeShell()),
-            (route) => false,
-          ),
+          onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
         ),
         title: const Text(
@@ -69,16 +64,16 @@ class CompletedTasksPage extends StatelessWidget {
       ),
       body: ListView.builder(
         padding: EdgeInsets.all(16 * _phi),
-        itemCount: _allTasks.length,
+        itemCount: allTasks.length,
         itemBuilder: (context, index) {
-          final task = _allTasks[index];
+          final task = allTasks[index];
           return Container(
             margin: EdgeInsets.only(bottom: 12 * _phi),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
             child: ListTile(
@@ -96,7 +91,7 @@ class CompletedTasksPage extends StatelessWidget {
                   _buildIconText(Icons.calendar_today_outlined, 'Diselesaikan pada: ${task['date']}'),
                 ],
               ),
-              trailing: Icon(Icons.chevron_right_rounded, color: red.withOpacity(0.4)),
+              trailing: Icon(Icons.chevron_right_rounded, color: red.withValues(alpha: 0.4)),
               onTap: () {
                 Navigator.push(
                   context,

@@ -1,11 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'task_detail_page.dart';
 
 class TaskSuccessPage extends StatelessWidget {
   final String taskId;
   final String newStatus;
-  final List<File>? images;
+  final List<XFile>? images;
   final String? note;
 
   const TaskSuccessPage({
