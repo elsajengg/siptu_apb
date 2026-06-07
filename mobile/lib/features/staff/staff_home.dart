@@ -96,6 +96,22 @@ class _StaffDashboard extends StatelessWidget {
     },
   ];
 
+  List<Map<String, dynamic>> get _sortedTasks {
+    final sorted = List<Map<String, dynamic>>.from(_myActiveTasks);
+    sorted.sort((a, b) {
+      const priorityOrder = {'urgent': 0, 'tinggi': 1, 'sedang': 2};
+      final pA = priorityOrder[a['priority'].toString().toLowerCase()] ?? 99;
+      final pB = priorityOrder[b['priority'].toString().toLowerCase()] ?? 99;
+      if (pA != pB) return pA.compareTo(pB);
+      
+      const diffOrder = {'berat': 0, 'sedang': 1, 'rendah': 2};
+      final dA = diffOrder[a['difficulty']?.toString().toLowerCase()] ?? 99;
+      final dB = diffOrder[b['difficulty']?.toString().toLowerCase()] ?? 99;
+      return dA.compareTo(dB);
+    });
+    return sorted;
+  }
+
   @override
   Widget build(BuildContext context) {
     final red = Colors.red.shade800;
@@ -245,103 +261,95 @@ class _StaffDashboard extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
-          Builder(
-            builder: (context) {
-              final sortedTasks = List<Map<String, dynamic>>.from(_myActiveTasks);
-              sortedTasks.sort((a, b) {
-                const priorityOrder = {'urgent': 0, 'tinggi': 1, 'sedang': 2};
-                final pA = priorityOrder[a['priority'].toString().toLowerCase()] ?? 99;
-                final pB = priorityOrder[b['priority'].toString().toLowerCase()] ?? 99;
-                if (pA != pB) return pA.compareTo(pB);
-                const diffOrder = {'berat': 0, 'sedang': 1, 'rendah': 2};
-                final dA = diffOrder[a['difficulty']?.toString().toLowerCase()] ?? 99;
-                final dB = diffOrder[b['difficulty']?.toString().toLowerCase()] ?? 99;
-                return dA.compareTo(dB);
-              });
-
-              return ListView.separated(
-                padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: sortedTasks.length,
-                separatorBuilder: (_, _) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final task = sortedTasks[index];
-
-                  return Container(
-                    decoration: const BoxDecoration(),
-                    child: TweenAnimationBuilder(
-                      duration: Duration(milliseconds: 400 + (index * 100)),
-                      tween: Tween<double>(begin: 0, end: 1),
-                      curve: Curves.easeOutQuart,
-                      builder: (context, double value, child) {
-                        return Opacity(
-                          opacity: value,
-                          child: Transform.translate(
-                            offset: Offset(0, 20 * (1 - value)),
-                            child: child,
-                          ),
-                        );
-                      },
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        title: Hero(
-                          tag: 'task_title_${task['id']}',
-                          child: Material(
-                            color: Colors.transparent,
-                            child: Text(
-                              task['title'],
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ),
-                        subtitle: Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.access_time, size: 12, color: Colors.black45),
-                              const SizedBox(width: 4),
-                              Text(
-                                task['deadline'],
-                                style: const TextStyle(fontSize: 11, color: Colors.black54),
-                              ),
-                            ],
-                          ),
-                        ),
-                        trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-                        onTap: () {
-                          if (task['status'] == 'Selesai') {
-                            Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                transitionDuration: const Duration(milliseconds: 500),
-                                pageBuilder: (context, animation, secondaryAnimation) => TaskDetailPage(task: task),
-                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                  return FadeTransition(opacity: animation, child: child);
-                                },
-                              ),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => UpdateStatusPage(
-                                  taskId: task['id'],
-                                  taskTitle: task['title'],
-                                  taskLocation: 'Lokasi Terlampir',
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
+          ListView.separated(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _sortedTasks.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, index) => _ActiveTaskTile(
+              task: _sortedTasks[index],
+              index: index,
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ActiveTaskTile extends StatelessWidget {
+  final Map<String, dynamic> task;
+  final int index;
+
+  const _ActiveTaskTile({required this.task, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder(
+      duration: Duration(milliseconds: 400 + (index * 100)),
+      tween: Tween<double>(begin: 0, end: 1),
+      curve: Curves.easeOutQuart,
+      builder: (context, double value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        title: Hero(
+          tag: 'task_title_${task['id']}',
+          child: Material(
+            color: Colors.transparent,
+            child: Text(
+              task['title'],
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            children: [
+              const Icon(Icons.access_time, size: 12, color: Colors.black45),
+              const SizedBox(width: 4),
+              Text(
+                task['deadline'],
+                style: const TextStyle(fontSize: 11, color: Colors.black54),
+              ),
+            ],
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: Colors.black26),
+        onTap: () {
+          if (task['status'] == 'Selesai') {
+            Navigator.push(
+              context,
+              PageRouteBuilder(
+                transitionDuration: const Duration(milliseconds: 500),
+                pageBuilder: (context, animation, secondaryAnimation) => TaskDetailPage(task: task),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+              ),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UpdateStatusPage(
+                  taskId: task['id'],
+                  taskTitle: task['title'],
+                  taskLocation: 'Lokasi Terlampir',
+                ),
+              ),
+            );
+          }
+        },
       ),
     );
   }

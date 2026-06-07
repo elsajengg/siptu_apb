@@ -3,8 +3,11 @@ import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:share_plus/share_plus.dart';
 import 'update_status.dart';
+import '../../services/pdf_export_service.dart';
 import '../../data/task_service.dart';
+import '../home/home_shell.dart';
 
 class TaskDetailPage extends StatelessWidget {
   final Map<String, dynamic> task;
@@ -19,6 +22,14 @@ class TaskDetailPage extends StatelessWidget {
   });
 
   static const double _phi = 1.61803398875;
+
+  List<CompletedTask> get _taskUpdates {
+    return TaskService()
+        .completedTasks
+        .where((t) => t.id == task['id'])
+        .toList();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +71,9 @@ class TaskDetailPage extends StatelessWidget {
             icon: Icon(Icons.edit_note_rounded, color: red, size: 28),
             tooltip: 'Edit Laporan',
           ),
-          IconButton(
-            onPressed: () {},
-            icon: Icon(Icons.share_outlined, color: red),
+          _ShareButtonWidget(
+            task: task,
+            customNote: customNote,
           ),
         ],
       ),
@@ -126,23 +137,9 @@ class TaskDetailPage extends StatelessWidget {
                   // ── Technician Notes ──────────────────────────────
                   _buildSectionTitle('II. CATATAN TEKNISI'),
                   const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9FAFB),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: Text(
-                      customNote ?? 'Perbaikan telah dilakukan pada komponen utama. Seluruh fungsi telah diuji kembali dan berjalan normal. Tidak ada kerusakan tambahan yang ditemukan di area sekitar.',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.black87,
-                        height: 1.6,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
+                  _EditableNoteWidget(
+                    initialNote: customNote ??
+                        'Perbaikan telah dilakukan pada komponen utama. Seluruh fungsi telah diuji kembali dan berjalan normal. Tidak ada kerusakan tambahan yang ditemukan di area sekitar.',
                   ),
                   
                   SizedBox(height: 24 * _phi),
@@ -196,10 +193,7 @@ class TaskDetailPage extends StatelessWidget {
   }
 
   Widget _buildUpdateHistoryList() {
-    final updates = TaskService()
-        .completedTasks
-        .where((t) => t.id == task['id'])
-        .toList();
+    final updates = _taskUpdates;
 
     if (updates.isEmpty) {
       return Container(
@@ -228,83 +222,10 @@ class TaskDetailPage extends StatelessWidget {
       itemCount: updates.length,
       separatorBuilder: (_, _) => const SizedBox(height: 16),
       itemBuilder: (context, index) {
-        final update = updates[index];
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
-              children: [
-                Container(
-                  width: 12,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade800,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                    boxShadow: [
-                      BoxShadow(color: Colors.red.shade800.withValues(alpha: 0.3), blurRadius: 4),
-                    ],
-                  ),
-                ),
-                if (index != updates.length - 1)
-                  Container(
-                    width: 2,
-                    height: 50, // Fixed height for simplicity in shrinkwrap
-                    color: Colors.grey.shade200,
-                  ),
-              ],
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        update.status.toUpperCase(),
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.red.shade800,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      Text(
-                        update.date,
-                        style: const TextStyle(fontSize: 10, color: Colors.black26),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    update.note.isEmpty ? '(Tanpa catatan)' : update.note,
-                    style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
-                  ),
-                  if (update.images.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    InkWell(
-                      onTap: () => _showUpdateImages(context, update.images),
-                      borderRadius: BorderRadius.circular(4),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text(
-                          '📎 ${update.images.length} Lampiran foto',
-                          style: TextStyle(
-                            fontSize: 10, 
-                            color: Colors.blue.shade700, 
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ],
+        return _UpdateHistoryTile(
+          update: updates[index],
+          isLast: index == updates.length - 1,
+          onTapImages: (images) => _showUpdateImages(context, images),
         );
       },
     );
@@ -507,6 +428,268 @@ class TaskDetailPage extends StatelessWidget {
       io.File(file.path),
       fit: BoxFit.cover,
       errorBuilder: (context, error, stackTrace) => _buildErrorImage(),
+    );
+  }
+}
+
+class _UpdateHistoryTile extends StatelessWidget {
+  final CompletedTask update;
+  final bool isLast;
+  final Function(List<XFile>) onTapImages;
+
+  const _UpdateHistoryTile({
+    required this.update,
+    required this.isLast,
+    required this.onTapImages,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Column(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.red.shade800,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(color: Colors.red.shade800.withValues(alpha: 0.3), blurRadius: 4),
+                ],
+              ),
+            ),
+            if (!isLast)
+              Container(
+                width: 2,
+                height: 50,
+                color: Colors.grey.shade200,
+              ),
+          ],
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    update.status.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red.shade800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  Text(
+                    update.date,
+                    style: const TextStyle(fontSize: 10, color: Colors.black26),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                update.note.isEmpty ? '(Tanpa catatan)' : update.note,
+                style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
+              ),
+              if (update.images.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: () => onTapImages(update.images),
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Text(
+                      '📎 ${update.images.length} Lampiran foto',
+                      style: TextStyle(
+                        fontSize: 10, 
+                        color: Colors.blue.shade700, 
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditableNoteWidget extends StatefulWidget {
+  final String initialNote;
+
+  const _EditableNoteWidget({required this.initialNote});
+
+  @override
+  State<_EditableNoteWidget> createState() => _EditableNoteWidgetState();
+}
+
+class _EditableNoteWidgetState extends State<_EditableNoteWidget> {
+  bool _isEditing = false;
+  late TextEditingController _controller;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialNote);
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus && _isEditing) {
+        setState(() => _isEditing = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        setState(() => _isEditing = true);
+        _focusNode.requestFocus();
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: _isEditing ? Colors.white : const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _isEditing ? Colors.red.shade800 : Colors.grey.shade200,
+            width: _isEditing ? 1.5 : 1.0,
+          ),
+          boxShadow: _isEditing
+              ? [
+                  BoxShadow(
+                    color: Colors.red.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
+        ),
+        child: _isEditing
+            ? TextFormField(
+                controller: _controller,
+                focusNode: _focusNode,
+                maxLines: null,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                  height: 1.6,
+                ),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
+                  border: InputBorder.none,
+                ),
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      _controller.text.isEmpty
+                          ? 'Tambahkan catatan teknisi...'
+                          : _controller.text,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: _controller.text.isEmpty
+                            ? Colors.black38
+                            : Colors.black87,
+                        height: 1.6,
+                        fontStyle: _controller.text.isEmpty
+                            ? FontStyle.normal
+                            : FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.edit, size: 16, color: Colors.black38),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+class _ShareButtonWidget extends StatefulWidget {
+  final Map<String, dynamic> task;
+  final String? customNote;
+
+  const _ShareButtonWidget({required this.task, this.customNote});
+
+  @override
+  State<_ShareButtonWidget> createState() => _ShareButtonWidgetState();
+}
+
+class _ShareButtonWidgetState extends State<_ShareButtonWidget> {
+  bool _isSharing = false;
+
+  Future<void> _handleShare() async {
+    if (_isSharing) return;
+    setState(() => _isSharing = true);
+
+    try {
+      // 1. Generate PDF (wait until done) - 100% dipisahkan
+      final pdfXFile = await PdfExportService.generateTaskReportPdf(
+        id: widget.task['id'] ?? 'TGS-000',
+        title: widget.task['title'] ?? 'Tanpa Judul',
+        location: widget.task['location'] ?? 'Lokasi tidak diketahui',
+        status: widget.task['status'] ?? 'Selesai',
+        date: widget.task['date'] ?? 'Tanggal tidak diketahui',
+        note: widget.customNote,
+      );
+
+      // 2. Share PDF & Await (blocking sampai dialog sistem selesai)
+      final result = await Share.shareXFiles([pdfXFile]);
+
+      if (!mounted) return;
+
+      // 3. Evaluasi ShareResultStatus
+      if (result.status == ShareResultStatus.success) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeShell()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error sharing PDF: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isSharing = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: _isSharing ? null : _handleShare,
+      icon: _isSharing
+          ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey),
+            )
+          : Icon(Icons.share_outlined, color: Colors.red.shade800),
     );
   }
 }

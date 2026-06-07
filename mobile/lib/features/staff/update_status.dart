@@ -38,12 +38,17 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
 
   final List<String> _statuses = ['Menunggu', 'Diproses', 'Selesai', 'Terkendala'];
 
+  late String _currentTitle;
+  late String _currentLocation;
+
   @override
   void initState() {
     super.initState();
     _selectedStatus = widget.initialStatus ?? 'Diproses';
     _noteController = TextEditingController(text: widget.initialNote);
     _images = List<XFile>.from(widget.initialImages ?? []);
+    _currentTitle = widget.taskTitle ?? 'Perbaikan AC Ruang 302';
+    _currentLocation = widget.taskLocation ?? 'Gedung Kuliah Utama, Lantai 3';
   }
 
   @override
@@ -112,8 +117,17 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
               child: Column(
                 children: [
                   _InfoRow(label: 'ID Tiket', value: widget.taskId ?? '#TGS-001'),
-                  _InfoRow(label: 'Judul', value: widget.taskTitle ?? 'Perbaikan AC Ruang 302'),
-                  _InfoRow(label: 'Lokasi', value: widget.taskLocation ?? 'Gedung Kuliah Utama, Lantai 3', isLast: true),
+                  _EditableInfoRow(
+                    label: 'Judul',
+                    initialValue: _currentTitle,
+                    onChanged: (val) => _currentTitle = val,
+                  ),
+                  _EditableInfoRow(
+                    label: 'Lokasi',
+                    initialValue: _currentLocation,
+                    onChanged: (val) => _currentLocation = val,
+                    isLast: true,
+                  ),
                 ],
               ),
             ),
@@ -250,8 +264,8 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   // Save to TaskService
                   final newTask = CompletedTask(
                     id: widget.taskId ?? '#TGS-001',
-                    title: widget.taskTitle ?? 'Perbaikan AC Ruang 302',
-                    location: widget.taskLocation ?? 'Gedung Kuliah Utama, Lt 3',
+                    title: _currentTitle,
+                    location: _currentLocation,
                     date: DateFormat('dd MMM yyyy, HH:mm').format(DateTime.now()),
                     status: _selectedStatus,
                     note: _noteController.text,
@@ -464,6 +478,116 @@ class _InfoRow extends StatelessWidget {
           ),
         ),
         if (!isLast) const Divider(height: 1),
+      ],
+    );
+  }
+}
+
+class _EditableInfoRow extends StatefulWidget {
+  final String label;
+  final String initialValue;
+  final ValueChanged<String> onChanged;
+  final bool isLast;
+
+  const _EditableInfoRow({
+    required this.label,
+    required this.initialValue,
+    required this.onChanged,
+    this.isLast = false,
+  });
+
+  @override
+  State<_EditableInfoRow> createState() => _EditableInfoRowState();
+}
+
+class _EditableInfoRowState extends State<_EditableInfoRow> {
+  bool _isEditing = false;
+  late TextEditingController _controller;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus && _isEditing) {
+        setState(() {
+          _isEditing = false;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(widget.label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _isEditing
+                    ? TextFormField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        onChanged: widget.onChanged,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                          border: const UnderlineInputBorder(
+                            borderSide: BorderSide(color: Colors.black12, width: 1),
+                          ),
+                          enabledBorder: const UnderlineInputBorder(
+                            borderSide: BorderSide(color: Colors.black12, width: 1),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: Colors.red, width: 1.5),
+                          ),
+                        ),
+                      )
+                    : GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isEditing = true;
+                          });
+                          _focusNode.requestFocus();
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                _controller.text,
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
+                                textAlign: TextAlign.right,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.edit, size: 14, color: Colors.black38),
+                          ],
+                        ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+        if (!widget.isLast) const Divider(height: 1),
       ],
     );
   }

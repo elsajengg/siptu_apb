@@ -34,17 +34,19 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
     };
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final red = Colors.red.shade800;
-
-    // Filter logic
-    final filteredTasks = _allTasks.where((task) {
+  List<Map<String, dynamic>> get _filteredTasks {
+    return _allTasks.where((task) {
       final matchesSearch = task['title'].toString().toLowerCase().contains(_searchQuery.toLowerCase()) || 
                             task['id'].toString().toLowerCase().contains(_searchQuery.toLowerCase());
       final matchesMonth = _selectedMonth == 'Semua' || task['month'] == _selectedMonth;
       return matchesSearch && matchesMonth;
     }).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final red = Colors.red.shade800;
+    final filteredTasks = _filteredTasks;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -136,82 +138,92 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
               : ListView.builder(
                   padding: EdgeInsets.all(16 * _phi),
                   itemCount: filteredTasks.length,
-                  itemBuilder: (context, index) {
-                    final task = filteredTasks[index];
-                    return Card(
-                      margin: EdgeInsets.only(bottom: 12 * _phi),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: Colors.grey.shade200),
-                      ),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.all(16 * _phi),
-                        title: Text(
-                          '${task['id']} - ${task['title']}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: 6 * _phi),
-                            Text(
-                              'Lokasi: ${task['location']}',
-                              style: const TextStyle(fontSize: 12, color: Colors.black87),
-                            ),
-                            SizedBox(height: 4 * _phi),
-                            Row(
-                              children: [
-                                  Icon(Icons.calendar_today, size: 12, color: Colors.black45),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Deadline: ${task['deadline']}', 
-                                    style: const TextStyle(fontSize: 11, color: Colors.black54)
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: task['status'] == 'Baru' ? Colors.orange.shade50 : Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            task['status'],
-                            style: TextStyle(
-                              color: task['status'] == 'Baru' ? Colors.orange.shade800 : Colors.blue.shade800, 
-                              fontSize: 11, 
-                              fontWeight: FontWeight.bold
-                            ),
-                          ),
-                        ),
-                        onTap: () {
-                          if (task['status'] == 'Selesai') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => TaskDetailPage(task: task)),
-                            );
-                          } else {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => UpdateStatusPage(
-                                  taskId: task['id'],
-                                  taskTitle: task['title'],
-                                  taskLocation: task['location'],
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                    );
-                  },
+                  itemBuilder: (context, index) => _AssignedTaskCard(task: filteredTasks[index]),
                 ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AssignedTaskCard extends StatelessWidget {
+  final Map<String, dynamic> task;
+
+  const _AssignedTaskCard({required this.task});
+
+  static const double _phi = 1.61803398875;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.only(bottom: 12 * _phi),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.all(16 * _phi),
+        title: Text(
+          '${task['id']} - ${task['title']}',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 6 * _phi),
+            Text(
+              'Lokasi: ${task['location']}',
+              style: const TextStyle(fontSize: 12, color: Colors.black87),
+            ),
+            SizedBox(height: 4 * _phi),
+            Row(
+              children: [
+                const Icon(Icons.calendar_today, size: 12, color: Colors.black45),
+                const SizedBox(width: 4),
+                Text(
+                  'Deadline: ${task['deadline']}', 
+                  style: const TextStyle(fontSize: 11, color: Colors.black54)
+                ),
+              ],
+            ),
+          ],
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: task['status'] == 'Baru' ? Colors.orange.shade50 : Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            task['status'],
+            style: TextStyle(
+              color: task['status'] == 'Baru' ? Colors.orange.shade800 : Colors.blue.shade800, 
+              fontSize: 11, 
+              fontWeight: FontWeight.bold
+            ),
+          ),
+        ),
+        onTap: () {
+          if (task['status'] == 'Selesai') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => TaskDetailPage(task: task)),
+            );
+          } else {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => UpdateStatusPage(
+                  taskId: task['id'],
+                  taskTitle: task['title'],
+                  taskLocation: task['location'],
+                ),
+              ),
+            );
+          }
+        },
       ),
     );
   }

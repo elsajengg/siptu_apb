@@ -544,25 +544,10 @@ class _ReportCard extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: onLike,
-                      icon: Icon(
-                        report.likedBy.contains(currentUser)
-                            ? Icons.thumb_up_alt
-                            : Icons.thumb_up_alt_outlined,
-                        size: 18,
-                        color: report.likedBy.contains(currentUser)
-                            ? Colors.red.shade800
-                            : null,
-                      ),
-                    ),
-                    Text(
-                      '${report.likes} dukungan',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
+                UpvoteButtonWidget(
+                  upvotes: report.likes,
+                  isUpvoted: report.likedBy.contains(currentUser),
+                  onToggle: onLike,
                 ),
               ],
             ),
@@ -884,3 +869,70 @@ String _formatTime(DateTime dt) {
   final mm = dt.minute.toString().padLeft(2, '0');
   return '$hh:$mm';
 }
+
+class UpvoteButtonWidget extends StatelessWidget {
+  final int upvotes;
+  final bool isUpvoted;
+  final VoidCallback onToggle;
+
+  const UpvoteButtonWidget({
+    super.key,
+    required this.upvotes,
+    required this.isUpvoted,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isUpvoted ? Colors.red.shade800 : Colors.black54;
+    final bgColor = isUpvoted ? Colors.red.shade50 : Colors.transparent;
+    final borderColor = isUpvoted ? Colors.red.shade200 : Colors.black12;
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween<double>(begin: 1.0, end: isUpvoted ? 1.15 : 1.0),
+      curve: Curves.elasticOut,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onToggle,
+              borderRadius: BorderRadius.circular(8),
+              splashColor: Colors.red.withOpacity(0.2),
+              highlightColor: Colors.red.withOpacity(0.1),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  border: Border.all(color: borderColor, width: 1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.keyboard_arrow_up_rounded,
+                      size: 22,
+                      color: color,
+                    ),
+                    Text(
+                      '$upvotes',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+

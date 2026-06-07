@@ -6,11 +6,7 @@ class CompletedTasksPage extends StatelessWidget {
 
   static const double _phi = 1.61803398875;
 
-  @override
-  Widget build(BuildContext context) {
-    final red = Colors.red.shade800;
-
-    // Merge real data from TaskService with mock data
+  List<Map<String, dynamic>> get _allTasks {
     final realTasks = TaskService().completedTasks.map((t) => {
       'id': t.id,
       'title': t.title,
@@ -21,31 +17,19 @@ class CompletedTasksPage extends StatelessWidget {
       'localImages': t.images,
     }).toList();
 
-    final List<Map<String, dynamic>> mockTasks = [
-      {
-        'id': 'TGS-010',
-        'title': 'Perbaikan AC Ruang 302',
-        'location': 'Gedung Kuliah Utama, Lt 3',
-        'date': '21 Apr 2026',
-        'status': 'Selesai',
-      },
-      {
-        'id': 'TGS-008',
-        'title': 'Ganti Lampu Selasar Barat',
-        'location': 'Gedung B, Selasar',
-        'date': '19 Apr 2026',
-        'status': 'Selesai',
-      },
-      {
-        'id': 'TGS-005',
-        'title': 'Perbaikan Kran Air Toilet',
-        'location': 'Gedung C, Lantai 1',
-        'date': '15 Apr 2026',
-        'status': 'Selesai',
-      },
+    final mockTasks = [
+      {'id': 'TGS-010', 'title': 'Perbaikan AC Ruang 302', 'location': 'Gedung Kuliah Utama, Lt 3', 'date': '21 Apr 2026', 'status': 'Selesai'},
+      {'id': 'TGS-008', 'title': 'Ganti Lampu Selasar Barat', 'location': 'Gedung B, Selasar', 'date': '19 Apr 2026', 'status': 'Selesai'},
+      {'id': 'TGS-005', 'title': 'Perbaikan Kran Air Toilet', 'location': 'Gedung C, Lantai 1', 'date': '15 Apr 2026', 'status': 'Selesai'},
     ];
 
-    final allTasks = [...realTasks, ...mockTasks];
+    return [...realTasks, ...mockTasks];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final red = Colors.red.shade800;
+    final tasks = _allTasks;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF9FAFB),
@@ -64,44 +48,57 @@ class CompletedTasksPage extends StatelessWidget {
       ),
       body: ListView.builder(
         padding: EdgeInsets.all(16 * _phi),
-        itemCount: allTasks.length,
-        itemBuilder: (context, index) {
-          final task = allTasks[index];
-          return Container(
-            margin: EdgeInsets.only(bottom: 12 * _phi),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
-            ),
-            child: ListTile(
-              contentPadding: EdgeInsets.all(12 * _phi),
-              title: Text(
-                '${task['id']} - ${task['title']}',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        itemCount: tasks.length,
+        itemBuilder: (context, index) => _CompletedTaskTile(task: tasks[index], red: red),
+      ),
+    );
+  }
+}
+
+class _CompletedTaskTile extends StatelessWidget {
+  final Map<String, dynamic> task;
+  final Color red;
+
+  const _CompletedTaskTile({required this.task, required this.red});
+
+  static const double _phi = 1.61803398875;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12 * _phi),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.all(12 * _phi),
+        title: Text(
+          '${task['id']} - ${task['title']}',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 8),
+            _buildIconText(Icons.location_on_outlined, task['location']),
+            const SizedBox(height: 4),
+            _buildIconText(Icons.calendar_today_outlined, 'Diselesaikan pada: ${task['date']}'),
+          ],
+        ),
+        trailing: Icon(Icons.chevron_right_rounded, color: red.withValues(alpha: 0.4)),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TaskDetailPage(
+                task: task,
+                localImages: task['localImages'],
+                customNote: task['note'],
               ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
-                  _buildIconText(Icons.location_on_outlined, task['location']),
-                  const SizedBox(height: 4),
-                  _buildIconText(Icons.calendar_today_outlined, 'Diselesaikan pada: ${task['date']}'),
-                ],
-              ),
-              trailing: Icon(Icons.chevron_right_rounded, color: red.withValues(alpha: 0.4)),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => TaskDetailPage(
-                    task: task,
-                    localImages: task['localImages'],
-                    customNote: task['note'],
-                  )),
-                );
-              },
             ),
           );
         },
