@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/notification_provider.dart';
+import 'notification_center_screen.dart';
 import 'assigned_tasks.dart';
 import 'update_status.dart';
 import 'task_detail_page.dart';
@@ -130,9 +133,42 @@ class _StaffDashboard extends StatelessWidget {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () {},
+          Consumer<NotificationProvider>(
+            builder: (context, notificationProvider, child) {
+              return IconButton(
+                icon: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    const Icon(Icons.notifications_none, color: Colors.white),
+                    if (notificationProvider.hasNotificationToday)
+                      Positioned(
+                        right: 2,
+                        top: 2,
+                        child: Container(
+                          padding: const EdgeInsets.all(1),
+                          decoration: BoxDecoration(
+                            color: Colors.yellow.shade600,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: red, width: 1.5),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 10,
+                            minHeight: 10,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const NotificationCenterScreen(),
+                    ),
+                  );
+                },
+              );
+            },
           ),
           const SizedBox(width: 8),
         ],
@@ -161,65 +197,81 @@ class _StaffDashboard extends StatelessWidget {
   Widget _buildHeroCard(BuildContext context, Color red) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
-          colors: [Colors.red.shade900, Colors.red.shade700],
+          colors: [Colors.red.shade900, Colors.red.shade600],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.black26,
-            blurRadius: 10,
-            offset: Offset(0, 6),
+            color: Colors.red.shade900.withOpacity(0.4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(
+              Icons.handyman_outlined,
+              size: 100,
+              color: Colors.white.withOpacity(0.1),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.engineering_outlined, color: red, size: 28),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Budi Santoso',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17,
-                      ),
+              Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    Text(
-                      'Staff Teknisi • Listrik & AC',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
+                    child: Icon(Icons.engineering, color: red, size: 30),
+                  ),
+                  const SizedBox(width: 16),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Budi Santoso',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 19,
+                          ),
+                        ),
+                        Text(
+                          'Staff Teknisi • Listrik & AC',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
-          ),
-          const SizedBox(height: 18),
-          const Text(
-            'Selamat bekerja! Selesaikan tugas dengan teliti dan utamakan keselamatan.',
-            style: TextStyle(color: Colors.white, fontSize: 12, height: 1.4),
           ),
         ],
       ),
@@ -229,51 +281,41 @@ class _StaffDashboard extends StatelessWidget {
 
 
   Widget _buildTaskList(BuildContext context, Color red) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(0, 3)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Tugas Saya Saat Ini',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Tugas Saya Saat Ini',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1F2937)),
+              ),
+              Text(
+                'Lihat Semua',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: red,
+                  fontWeight: FontWeight.w700,
                 ),
-                Text(
-                  'Lihat Semua',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: red,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          const Divider(height: 1),
-          ListView.separated(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _sortedTasks.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
-            itemBuilder: (context, index) => _ActiveTaskTile(
-              task: _sortedTasks[index],
-              index: index,
-            ),
+        ),
+        ListView.separated(
+          padding: EdgeInsets.zero,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _sortedTasks.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          itemBuilder: (context, index) => _ActiveTaskTile(
+            task: _sortedTasks[index],
+            index: index,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -299,57 +341,96 @@ class _ActiveTaskTile extends StatelessWidget {
           ),
         );
       },
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        title: Hero(
-          tag: 'task_title_${task['id']}',
-          child: Material(
-            color: Colors.transparent,
-            child: Text(
-              task['title'],
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: const Color(0xFFF3F4F6)),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              if (task['status'] == 'Selesai') {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    transitionDuration: const Duration(milliseconds: 500),
+                    pageBuilder: (context, animation, secondaryAnimation) => TaskDetailPage(task: task),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UpdateStatusPage(
+                      taskId: task['id'],
+                      taskTitle: task['title'],
+                      taskLocation: 'Lokasi Terlampir',
+                    ),
+                  ),
+                );
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.build_circle_outlined, color: Colors.red.shade700, size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Hero(
+                          tag: 'task_title_${task['id']}',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: Text(
+                              task['title'],
+                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(Icons.access_time_rounded, size: 14, color: Colors.black45),
+                            const SizedBox(width: 4),
+                            Text(
+                              task['deadline'],
+                              style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded, color: Colors.black38),
+                ],
+              ),
             ),
           ),
         ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 4),
-          child: Row(
-            children: [
-              const Icon(Icons.access_time, size: 12, color: Colors.black45),
-              const SizedBox(width: 4),
-              Text(
-                task['deadline'],
-                style: const TextStyle(fontSize: 11, color: Colors.black54),
-              ),
-            ],
-          ),
-        ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.black26),
-        onTap: () {
-          if (task['status'] == 'Selesai') {
-            Navigator.push(
-              context,
-              PageRouteBuilder(
-                transitionDuration: const Duration(milliseconds: 500),
-                pageBuilder: (context, animation, secondaryAnimation) => TaskDetailPage(task: task),
-                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-              ),
-            );
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => UpdateStatusPage(
-                  taskId: task['id'],
-                  taskTitle: task['title'],
-                  taskLocation: 'Lokasi Terlampir',
-                ),
-              ),
-            );
-          }
-        },
       ),
     );
   }

@@ -1,7 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/notification_provider.dart';
 import '../auth/login_page.dart';
 import 'completed_tasks_page.dart';
 import '../home/home_shell.dart';
+import 'widgets/profile_header_widget.dart';
 
 class StaffProfilePage extends StatefulWidget {
   const StaffProfilePage({super.key});
@@ -11,8 +15,12 @@ class StaffProfilePage extends StatefulWidget {
 }
 
 class _StaffProfilePageState extends State<StaffProfilePage> {
-  static const double _phi = 1.61803398875;
-  bool _notificationsEnabled = true;
+  // ── Constants ─────────────────────────────────────────────────────
+  static const double _headerHeight = 180.0;
+  static const double _avatarRadius = 52.0;
+  static const double _sectionMargin = 20.0;
+
+  bool _notificationsEnabled = true; // fallback lokal, tidak lagi dipakai
   String _name = 'Budi Santoso';
   String _position = 'Staff Teknisi Ahli • Fasilitas & Infrastruktur';
   String _email = 'budi.santoso@telkomuniversity.ac.id';
@@ -20,14 +28,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final double bannerHeight = size.width / _phi;
-    final double avatarDiameter = bannerHeight / _phi;
-    final double avatarRadius = avatarDiameter / 2;
     final red = Colors.red.shade800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF9FAFB),
+      backgroundColor: const Color(0xFFF3F4F6),
       appBar: AppBar(
         backgroundColor: red,
         elevation: 0,
@@ -44,55 +48,23 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
         ),
       ),
       body: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Golden Ratio Header (Banner + Avatar) ────────────────
-            Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: [
-                _buildBanner(bannerHeight, red),
-                Positioned(
-                  top: bannerHeight - (avatarDiameter / (_phi * _phi)),
-                  child: _buildAvatar(avatarRadius, red),
-                ),
-              ],
+            // ── Header (ProfileHeaderWidget) ────────────────────────
+            ProfileHeaderWidget(
+              name: _name,
+              position: _position,
+              nip: '19850612 201012 1 001',
+              onEditTap: _showEditProfileDialog,
             ),
 
-            SizedBox(height: avatarRadius * _phi),
+            const SizedBox(height: 28),
 
-            // ── Personal Info & Identity ───────────────────────────
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16 * _phi),
-              child: Column(
-                children: [
-                  Text(
-                    _name,
-                    style: TextStyle(
-                      fontSize: 18 * _phi,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: -0.5,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(height: 4 * _phi),
-                  Text(
-                    _position,
-                    style: TextStyle(
-                      fontSize: 8 * _phi,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: 8 * _phi),
-                  _buildIdentityChip(red),
-                ],
-              ),
-            ),
-
-
-            // ── Account & Information Section ──────────────────────
+            // ── Section: Informasi Akun ───────────────────────────────
             _buildSectionHeader('Informasi Akun'),
+            const SizedBox(height: 10),
             _buildActionCard([
               _MenuTile(
                 icon: Icons.alternate_email_rounded,
@@ -116,36 +88,20 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                   );
                 },
               ),
-
             ]),
 
-            const SizedBox(height: 20 * _phi),
+            const SizedBox(height: 24),
 
-            // ── Settings & Preferences ─────────────────────────────
+            // ── Section: Pengaturan & Keamanan ───────────────────────
             _buildSectionHeader('Pengaturan & Keamanan'),
+            const SizedBox(height: 10),
             _buildActionCard([
               _MenuTile(
                 icon: Icons.lock_outline_rounded,
                 title: 'Ganti Kata Sandi',
                 onTap: () => _showChangePasswordDialog(),
               ),
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                secondary: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.notifications_active_outlined, size: 20, color: Colors.blue),
-                ),
-                title: const Text(
-                  'Notifikasi Tugas',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-                value: _notificationsEnabled,
-                onChanged: (val) => setState(() => _notificationsEnabled = val),
-              ),
+              _buildNotificationTile(red),
               _MenuTile(
                 icon: Icons.logout_rounded,
                 title: 'Keluar Dari Aplikasi',
@@ -154,94 +110,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
               ),
             ]),
 
-            const SizedBox(height: 48),
+            // ── Bottom Padding ────────────────────────────────────────
+            const SizedBox(height: 72),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBanner(double height, Color red) {
-    final overlap = (height / _phi) / (_phi * _phi);
-    return Container(
-      width: double.infinity,
-      height: height,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.red.shade900, red, const Color(0xFF7F1D1D)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          CustomPaint(
-            size: Size(double.infinity, height),
-            painter: _BannerPainter(),
-          ),
-          Positioned(
-            bottom: overlap,
-            right: 24,
-            child: GestureDetector(
-              onTap: () => _showEditProfileDialog(),
-              child: CircleAvatar(
-                radius: 22,
-                backgroundColor: Colors.white.withValues(alpha: 0.15),
-                child: const Icon(Icons.edit, color: Colors.white, size: 20),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAvatar(double radius, Color red) {
-    return Container(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white, width: 4),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08), 
-            blurRadius: 20, 
-            offset: const Offset(0, 10)
-          ),
-        ],
-      ),
-      child: CircleAvatar(
-        radius: radius,
-        backgroundColor: Colors.grey.shade100,
-        child: ClipOval(
-          child: Icon(Icons.person, size: radius * 1.2, color: red.withValues(alpha: 0.4)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildIdentityChip(Color red) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      decoration: BoxDecoration(
-        color: red.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: red.withValues(alpha: 0.12)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.verified_user, size: 14, color: red),
-          const SizedBox(width: 8),
-          Text(
-            'NIP: 19850612 201012 1 001',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: red,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -249,20 +121,83 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 24, bottom: 12),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.2,
-          ),
+      padding: const EdgeInsets.only(left: _sectionMargin + 4, right: _sectionMargin),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.1,
+          color: Color(0xFF374151),
         ),
       ),
     );
   }
+
+  Widget _buildActionCard(List<Widget> children) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _sectionMargin),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: children.asMap().entries.map((e) {
+            final idx = e.key;
+            final child = e.value;
+            if (idx == children.length - 1) return child;
+            return Column(
+              children: [
+                child,
+                const Divider(height: 1, indent: 56, endIndent: 0, color: Color(0xFFF3F4F6)),
+              ],
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationTile(Color red) {
+    return Consumer<NotificationProvider>(
+      builder: (context, provider, _) {
+        return ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              Icons.notifications_active_outlined,
+              size: 20,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          title: const Text(
+            'Notifikasi Tugas',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+          ),
+          trailing: CupertinoSwitch(
+            value: provider.notificationsEnabled,
+            activeColor: Colors.red.shade800,
+            onChanged: provider.toggleNotifications,
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Dialog Builders ────────────────────────────────────────────────
 
   void _showEditProfileDialog() {
     final nameCtrl = TextEditingController(text: _name);
@@ -329,38 +264,6 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
     );
   }
 
-  Widget _buildActionCard(List<Widget> children) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          children: children.asMap().entries.map((e) {
-            final idx = e.key;
-            final widget = e.value;
-            if (idx == children.length - 1) return widget;
-            return Column(
-              children: [
-                widget,
-                const Divider(height: 1, indent: 56),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
   void _showEditEmailDialog() {
     final controller = TextEditingController(text: _email);
     showDialog(
@@ -406,7 +309,6 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           controller: controller,
           decoration: InputDecoration(
             labelText: 'Nomor Telepon',
-            prefixText: '',
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
           keyboardType: TextInputType.phone,
@@ -485,7 +387,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Konfirmasi Logout'),
+        title: const Text('Konfirmasi Logout', style: TextStyle(fontWeight: FontWeight.bold)),
         content: const Text('Apakah Anda yakin ingin keluar dari akun staf?'),
         actions: [
           TextButton(
@@ -507,6 +409,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
   }
 }
 
+// ── Reusable _MenuTile ─────────────────────────────────────────────────
 
 class _MenuTile extends StatelessWidget {
   final IconData icon;
@@ -525,56 +428,46 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveColor = color ?? Colors.grey.shade700;
+    final isDestructive = color != null;
+
     return ListTile(
       onTap: onTap,
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: subtitle != null ? 4 : 2),
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: (color ?? Colors.grey.shade700).withValues(alpha: 0.08),
+          color: isDestructive
+              ? effectiveColor.withOpacity(0.08)
+              : Colors.grey.shade100,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(icon, color: color ?? Colors.grey.shade700, size: 20),
+        child: Icon(icon, color: effectiveColor, size: 20),
       ),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: color ?? Colors.black87,
+          color: isDestructive ? effectiveColor : const Color(0xFF111827),
         ),
       ),
       subtitle: subtitle != null
-          ? Text(
-              subtitle!,
-              style: const TextStyle(fontSize: 12, color: Colors.black45),
+          ? Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                subtitle!,
+                style: const TextStyle(fontSize: 12.5, color: Colors.black45),
+              ),
             )
           : null,
-      trailing: const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.black26),
+      trailing: Icon(
+        Icons.chevron_right_rounded,
+        size: 20,
+        color: isDestructive ? effectiveColor.withOpacity(0.5) : Colors.black26,
+      ),
     );
   }
 }
 
-class _BannerPainter extends CustomPainter {
-  static const double _phi = 1.61803398875;
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06)
-      ..style = PaintingStyle.fill;
-
-    // Abstract circles based on phi
-    canvas.drawCircle(Offset(size.width * (1 / _phi), size.height * 0.1), size.width / (_phi * _phi), paint);
-    canvas.drawCircle(Offset(size.width * 0.1, size.height * 0.8), size.width / (_phi * 1.5), paint);
-
-    final path = Path()
-      ..moveTo(0, size.height * 0.75)
-      ..quadraticBezierTo(size.width / _phi, size.height * 0.95, size.width, size.height * 0.65)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+// ── BannerPainter sudah dipindah ke widgets/profile_header_widget.dart ──

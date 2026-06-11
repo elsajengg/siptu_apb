@@ -6,6 +6,9 @@ import 'firebase_options.dart';
 import 'features/splash/splash_page.dart';
 import 'services/notification_service.dart';
 import 'data/task_service.dart';
+import 'package:provider/provider.dart';
+import 'providers/report_provider.dart';
+import 'providers/notification_provider.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -70,7 +73,15 @@ void main() async {
     _scheduleNextDailyTask();
   }
 
-  runApp(const MyApp());
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ReportProvider()),
+          ChangeNotifierProvider(create: (_) => NotificationProvider()),
+        ],
+        child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
