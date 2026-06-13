@@ -4,6 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import 'report_feed_page.dart';
 import 'report_success_page.dart';
 import 'dart:io';
+import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
+import '../../providers/report_provider.dart';
 
 const _categories = <String>[
   'Penerangan',
@@ -46,6 +49,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
 
   late String _category;
   List<XFile> _photos = [];
+  List<Uint8List> _photoBytes = [];
   bool _submitting = false;
 
   @override
@@ -80,8 +84,13 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
         );
         if (!mounted) return;
         if (files.isEmpty) return;
+        List<Uint8List> newBytes = [];
+        for (var f in files) {
+          newBytes.add(await f.readAsBytes());
+        }
         setState(() {
           _photos = [..._photos, ...files].take(6).toList();
+          _photoBytes = [..._photoBytes, ...newBytes].take(6).toList();
         });
         return;
       } else {
@@ -93,8 +102,10 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
       }
       if (!mounted) return;
       if (file == null) return;
+      final bytes = await file.readAsBytes();
       setState(() {
         _photos = [..._photos, file!].take(6).toList();
+        _photoBytes = [..._photoBytes, bytes].take(6).toList();
       });
     } catch (e) {
       if (!mounted) return;
@@ -132,8 +143,9 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
       staffFeedback: '',
       createdAt: DateTime.now(),
       photoPaths: _photos.map((e) => e.path).toList(),
+      photoBytesList: _photoBytes,
     );
-    ReportRepository.add(createdReport);
+    context.read<ReportProvider>().addReport(createdReport);
 
     // Instead of popping, navigate to success page
     Navigator.pushReplacement(
@@ -491,9 +503,12 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                                         ),
                                         child: ClipRRect(
                                           borderRadius: BorderRadius.circular(12),
-                                          child: Image.file(
-                                            File(_photos[i].path),
+                                          child: Image.memory(
+                                            _photoBytes[i],
                                             fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return const Icon(Icons.broken_image);
+                                            },
                                           ),
                                         ),
                                       ),
@@ -505,6 +520,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                                         onTap: () {
                                           setState(() {
                                             _photos.removeAt(i);
+                                            _photoBytes.removeAt(i);
                                           });
                                         },
                                         child: Container(

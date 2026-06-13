@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'report_feed_page.dart';
+import 'package:provider/provider.dart';
+import '../../providers/report_provider.dart';
 import 'report_detail_page.dart';
 import '../home/home_shell.dart';
 
@@ -14,7 +16,7 @@ class _HistoryPageState extends State<HistoryPage> {
   final String _currentUser = 'mahasiswa_aktif';
   String _selectedStatus = 'Semua';
 
-  List<Report> get _reports => ReportRepository.getByUser(_currentUser);
+  List<Report> get _reports => context.watch<ReportProvider>().getByUser(_currentUser);
 
   List<Report> get _filteredReports {
     if (_selectedStatus == 'Semua') {
@@ -205,10 +207,10 @@ class _HistoryPageState extends State<HistoryPage> {
       feedbackCtrl.dispose();
       return;
     }
-    ReportRepository.submitReporterFeedback(
+    context.read<ReportProvider>().submitReporterFeedback(
       reportId: report.id,
       rating: selectedRating,
-      feedback: feedbackCtrl.text,
+      feedback: feedbackCtrl.text.trim(),
     );
     feedbackCtrl.dispose();
     if (!mounted) return;

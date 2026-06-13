@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'report_feed_page.dart';
+import 'package:provider/provider.dart';
+import '../../providers/report_provider.dart';
 import '../home/home_shell.dart';
 
 class ReportDetailPage extends StatelessWidget {
