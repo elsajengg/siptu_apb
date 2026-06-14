@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../data/api_service.dart';
 import '../home/home_shell.dart';
 import '../admin/admin_home.dart';
 import '../staff/staff_home.dart';
@@ -12,16 +12,11 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  static const Map<String, String> _dummyUserAccounts = {
-    'mahasiswa@siptu.test': 'user123',
-    'user1@siptu.test': 'user123',
-    'user2@siptu.test': 'user123',
-  };
-
   final _formKey = GlobalKey<FormState>();
   final _userCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   bool _obscure = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -30,33 +25,39 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _login() {
+  void _login() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final username = _userCtrl.text.trim().toLowerCase();
+    setState(() => _loading = true);
+
+    final email = _userCtrl.text.trim();
     final password = _passCtrl.text;
 
-    if (username.contains('admin')) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const AdminHome()));
-    } else if (username.contains('staff')) {
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const StaffHome()));
-    } else {
-      final expectedPassword = _dummyUserAccounts[username];
-      if (expectedPassword == null || expectedPassword != password) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Akun user dummy tidak ditemukan atau password salah.'),
-          ),
+    final result = await ApiService.login(email, password);
+
+    setState(() => _loading = false);
+
+    if (!mounted) return;
+
+    if (result['success']) {
+      final role = result['data']['user']['role'] ?? '';
+      if (role == 'admin') {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AdminHome()),
         );
-        return;
+      } else if (role == 'staff') {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const StaffHome()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const HomeShell()),
+        );
       }
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Login gagal')),
+      );
     }
   }
 
@@ -105,10 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                           SizedBox(height: 4),
                           Text(
                             'Login untuk melapor & memantau tiket fasilitas kampus',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: Colors.white70, fontSize: 12),
                           ),
                         ],
                       ),
@@ -124,11 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 8,
-                      offset: Offset(0, 4),
-                    ),
+                    BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
                   ],
                 ),
                 child: Form(
@@ -136,18 +130,9 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Masuk',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      const Text('Masuk', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Gunakan akun kampus (NIM/NIP/Email).',
-                        style: TextStyle(fontSize: 12, color: Colors.black54),
-                      ),
+                      const Text('Gunakan akun kampus (NIM/NIP/Email).', style: TextStyle(fontSize: 12, color: Colors.black54)),
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _userCtrl,
@@ -156,12 +141,7 @@ class _LoginPageState extends State<LoginPage> {
                           prefixIcon: Icon(Icons.person_outline),
                           border: OutlineInputBorder(),
                         ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Wajib diisi';
-                          }
-                          return null;
-                        },
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -172,13 +152,8 @@ class _LoginPageState extends State<LoginPage> {
                           prefixIcon: const Icon(Icons.lock_outline),
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
-                            onPressed: () =>
-                                setState(() => _obscure = !_obscure),
-                            icon: Icon(
-                              _obscure
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
+                            onPressed: () => setState(() => _obscure = !_obscure),
+                            icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                           ),
                         ),
                         validator: (v) {
@@ -193,11 +168,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: TextButton(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Fitur lupa password (placeholder).',
-                                ),
-                              ),
+                              const SnackBar(content: Text('Fitur lupa password (placeholder).')),
                             );
                           },
                           child: const Text('Lupa password?'),
@@ -209,8 +180,10 @@ class _LoginPageState extends State<LoginPage> {
                         height: 48,
                         child: FilledButton(
                           style: FilledButton.styleFrom(backgroundColor: red),
-                          onPressed: _login,
-                          child: const Text('Login'),
+                          onPressed: _loading ? null : _login,
+                          child: _loading
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text('Login'),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -220,49 +193,11 @@ class _LoginPageState extends State<LoginPage> {
                         child: OutlinedButton.icon(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Login SSO (placeholder).'),
-                              ),
+                              const SnackBar(content: Text('Login SSO (placeholder).')),
                             );
                           },
                           icon: const Icon(Icons.key_outlined),
                           label: const Text('Login dengan SSO'),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      // Info login hint
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF3F4F6),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Dummy user (tanpa admin/staff):',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            SizedBox(height: 4),
-                            Text(
-                              'mahasiswa@siptu.test / user123',
-                              style: TextStyle(fontSize: 11, color: Colors.black54),
-                            ),
-                            Text(
-                              'user1@siptu.test / user123',
-                              style: TextStyle(fontSize: 11, color: Colors.black54),
-                            ),
-                            Text(
-                              'user2@siptu.test / user123',
-                              style: TextStyle(fontSize: 11, color: Colors.black54),
-                            ),
-                          ],
                         ),
                       ),
                     ],
