@@ -1,22 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'report_feed_page.dart';
 import 'report_success_page.dart';
-import 'dart:io';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
+import '../../data/api_service.dart';
 import '../../providers/report_provider.dart';
-
-const _categories = <String>[
-  'Penerangan',
-  'Kenyamanan Ruangan',
-  'Sanitasi',
-  'Furnitur',
-  'Keamanan',
-  'Internet & Jaringan',
-  'Lainnya',
-];
 
 class ReportCreatePage extends StatefulWidget {
   final String currentUser;
@@ -47,7 +36,9 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   final _descCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
 
-  late String _category;
+  List<Map<String, dynamic>> _facilities = [];
+  int? _selectedFacilityId;
+  bool _loadingFacilities = true;
   List<XFile> _photos = [];
   List<Uint8List> _photoBytes = [];
   bool _submitting = false;
@@ -55,11 +46,61 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   @override
   void initState() {
     super.initState();
-    _category = _categories.first;
     _namaCtrl.text = widget.initialNama ?? '';
     _nimCtrl.text = widget.initialNIM ?? '';
     _fakultasCtrl.text = widget.initialFakultas ?? '';
     _locationCtrl.text = widget.initialLocation ?? '';
+    _loadFacilities();
+  }
+
+  Future<void> _loadFacilities() async {
+    final result = await ApiService.getFacilities();
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      final facilities = (result['data'] as List<dynamic>)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+
+      setState(() {
+        _facilities = facilities;
+        _loadingFacilities = false;
+
+        if (facilities.isNotEmpty) {
+          _selectedFacilityId = facilities.first['id'] as int;
+          _applyFacility(facilities.first, overwriteLocation: false);
+        }
+      });
+      return;
+    }
+
+    setState(() => _loadingFacilities = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result['message'] ?? 'Gagal memuat fasilitas')),
+    );
+  }
+
+  void _applyFacility(
+    Map<String, dynamic> facility, {
+    bool overwriteLocation = true,
+  }) {
+    final room = facility['room'] as Map<String, dynamic>?;
+    if (room == null || (!overwriteLocation && _locationCtrl.text.isNotEmpty)) {
+      return;
+    }
+
+    _locationCtrl.text =
+        '${room['building_name'] ?? ''}, ${room['room_name'] ?? ''}'.replaceAll(
+          RegExp(r'^, |, $'),
+          '',
+        );
+  }
+
+  Map<String, dynamic>? get _selectedFacility {
+    for (final facility in _facilities) {
+      if (facility['id'] == _selectedFacilityId) return facility;
+    }
+    return null;
   }
 
   @override
@@ -89,8 +130,8 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
           newBytes.add(await f.readAsBytes());
         }
         setState(() {
-          _photos = [..._photos, ...files].take(6).toList();
-          _photoBytes = [..._photoBytes, ...newBytes].take(6).toList();
+          _photos = [..._photos, ...files].take(5).toList();
+          _photoBytes = [..._photoBytes, ...newBytes].take(5).toList();
         });
         return;
       } else {
@@ -104,14 +145,12 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
       if (file == null) return;
       final bytes = await file.readAsBytes();
       setState(() {
-        _photos = [..._photos, file!].take(6).toList();
-        _photoBytes = [..._photoBytes, bytes].take(6).toList();
+        _photos = [..._photos, file!].take(5).toList();
+        _photoBytes = [..._photoBytes, bytes].take(5).toList();
       });
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
             'Gagal akses kamera/galeri. Pastikan izin sudah diaktifkan di pengaturan aplikasi.',
@@ -124,28 +163,36 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   Future<void> _submit() async {
     if (_submitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (_selectedFacilityId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pilih fasilitas terlebih dahulu')),
+      );
+      return;
+    }
 
     setState(() => _submitting = true);
-    await Future<void>.delayed(const Duration(milliseconds: 250));
-    if (!mounted) return;
-
-    // Generate the report object (mockup for now)
-    final createdReport = Report(
-      id: _makeId(),
+    final result = await ApiService.createReport(
+      facilityId: _selectedFacilityId!,
       title: _titleCtrl.text.trim(),
       description: _descCtrl.text.trim(),
       location: _locationCtrl.text.trim(),
-      category: _category,
-      status: 'Menunggu',
-      createdBy: widget.currentUser,
-      likedBy: [],
-      staffName: '',
-      staffFeedback: '',
-      createdAt: DateTime.now(),
-      photoPaths: _photos.map((e) => e.path).toList(),
-      photoBytesList: _photoBytes,
+      photos: _photos,
     );
-    context.read<ReportProvider>().addReport(createdReport);
+    if (!mounted) return;
+
+    if (result['success'] != true) {
+      setState(() => _submitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Laporan gagal dikirim')),
+      );
+      return;
+    }
+
+    await Future.wait([
+      context.read<ReportProvider>().loadFeed(),
+      context.read<ReportProvider>().loadMine(),
+    ]);
+    if (!mounted) return;
 
     // Instead of popping, navigate to success page
     Navigator.pushReplacement(
@@ -183,7 +230,9 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(28),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: red.withAlpha((0.30 * 255).round()),
@@ -214,7 +263,10 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withAlpha((0.16 * 255).round()),
                         borderRadius: BorderRadius.circular(999),
@@ -272,11 +324,15 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
             ),
             child: const Row(
               children: [
-                Icon(Icons.tips_and_updates_outlined, size: 16, color: Colors.black54),
+                Icon(
+                  Icons.tips_and_updates_outlined,
+                  size: 16,
+                  color: Colors.black54,
+                ),
                 SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "Gunakan galeri untuk pilih banyak foto sekaligus. Maksimal 6 foto per laporan.",
+                    "Gunakan galeri untuk pilih banyak foto sekaligus. Maksimal 5 foto per laporan.",
                     style: TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ),
@@ -352,26 +408,72 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                         ),
                         const SizedBox(height: 10),
 
-                        /// DROPDOWN
+                        /// FACILITY
                         _inputWrapper(
-                          child: DropdownButtonFormField<String>(
-                            value: _category,
+                          child: DropdownButtonFormField<int>(
+                            key: ValueKey(_selectedFacilityId),
+                            initialValue: _selectedFacilityId,
                             decoration: const InputDecoration(
                               border: InputBorder.none,
-                              prefixIcon: Icon(Icons.category),
+                              prefixIcon: Icon(Icons.handyman_outlined),
+                              hintText: 'Pilih fasilitas',
                             ),
-                            items: _categories
-                                .map(
-                                  (e) => DropdownMenuItem(
-                                    value: e,
-                                    child: Text(e),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (v) =>
-                                setState(() => _category = v ?? _category),
+                            items: _facilities.map((facility) {
+                              final room =
+                                  facility['room'] as Map<String, dynamic>?;
+                              final roomLabel = room == null
+                                  ? ''
+                                  : ' - ${room['building_name']}, ${room['room_name']}';
+
+                              return DropdownMenuItem<int>(
+                                value: facility['id'] as int,
+                                child: Text(
+                                  '${facility['name']}$roomLabel',
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: _loadingFacilities
+                                ? null
+                                : (value) {
+                                    if (value == null) return;
+                                    final facility = _facilities.firstWhere(
+                                      (item) => item['id'] == value,
+                                    );
+                                    setState(() {
+                                      _selectedFacilityId = value;
+                                      _applyFacility(facility);
+                                    });
+                                  },
+                            validator: (value) => value == null
+                                ? 'Fasilitas wajib dipilih'
+                                : null,
                           ),
                         ),
+
+                        if (_selectedFacility != null) ...[
+                          const SizedBox(height: 8),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.category_outlined,
+                                  size: 15,
+                                  color: Colors.black45,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Kategori: ${_selectedFacility!['category']}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
 
                         const SizedBox(height: 12),
 
@@ -384,10 +486,9 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                               border: InputBorder.none,
                               prefixIcon: Icon(Icons.title),
                             ),
-                            validator: (v) =>
-                                (v == null || v.isEmpty)
-                                    ? "Judul wajib diisi"
-                                    : null,
+                            validator: (v) => (v == null || v.isEmpty)
+                                ? "Judul wajib diisi"
+                                : null,
                           ),
                         ),
 
@@ -402,10 +503,9 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                               border: InputBorder.none,
                               prefixIcon: Icon(Icons.place),
                             ),
-                            validator: (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? "Tempat wajib diisi"
-                                    : null,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? "Tempat wajib diisi"
+                                : null,
                           ),
                         ),
 
@@ -421,10 +521,9 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                               hintText: "Deskripsi laporan...",
                               border: InputBorder.none,
                             ),
-                            validator: (v) =>
-                                (v == null || v.trim().isEmpty)
-                                    ? "Deskripsi wajib diisi"
-                                    : null,
+                            validator: (v) => (v == null || v.trim().isEmpty)
+                                ? "Deskripsi wajib diisi"
+                                : null,
                           ),
                         ),
 
@@ -467,7 +566,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                                 ),
                               ),
                               child: Text(
-                                '${_photos.length}/6',
+                                '${_photos.length}/5',
                                 style: const TextStyle(
                                   color: Color(0xFF374151),
                                   fontSize: 12,
@@ -498,17 +597,26 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                                         width: 120,
                                         height: 96,
                                         decoration: BoxDecoration(
-                                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: const Color(0xFFE5E7EB),
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                           child: Image.memory(
                                             _photoBytes[i],
                                             fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return const Icon(Icons.broken_image);
-                                            },
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                                  return const Icon(
+                                                    Icons.broken_image,
+                                                  );
+                                                },
                                           ),
                                         ),
                                       ),
@@ -562,10 +670,17 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(_submitting ? Icons.hourglass_top_rounded : Icons.send_rounded, size: 18),
+                                Icon(
+                                  _submitting
+                                      ? Icons.hourglass_top_rounded
+                                      : Icons.send_rounded,
+                                  size: 18,
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  _submitting ? "Mengirim..." : "Kirim Pengaduan",
+                                  _submitting
+                                      ? "Mengirim..."
+                                      : "Kirim Pengaduan",
                                   style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
@@ -585,17 +700,6 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
         ],
       ),
     );
-  }
-
-  String _makeId() {
-    final now = DateTime.now();
-    final y = now.year.toString().padLeft(4, '0');
-    final m = now.month.toString().padLeft(2, '0');
-    final d = now.day.toString().padLeft(2, '0');
-    final hh = now.hour.toString().padLeft(2, '0');
-    final mm = now.minute.toString().padLeft(2, '0');
-    final ss = now.second.toString().padLeft(2, '0');
-    return 'REP-$y$m$d-$hh$mm$ss';
   }
 
   Widget _inputWrapper({required Widget child}) {
@@ -644,10 +748,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
         const SizedBox(width: 8),
         Text(
           title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ],
     );

@@ -1,6 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 
+import '../data/api_service.dart';
+
 class Report {
+  final int databaseId;
   final String id;
   final String title;
   final String description;
@@ -16,9 +21,10 @@ class Report {
   final String reporterFeedback;
   final DateTime createdAt;
   final List<String> photoPaths;
-  final List<Uint8List>? photoBytesList; // Added for Web support
+  final List<Uint8List>? photoBytesList;
 
   Report({
+    this.databaseId = 0,
     required this.id,
     required this.title,
     required this.description,
@@ -37,6 +43,40 @@ class Report {
     this.photoBytesList,
   });
 
+  factory Report.fromJson(Map<String, dynamic> json) {
+    final task = json['task'] as Map<String, dynamic>?;
+    final staff = task?['staff'] as Map<String, dynamic>?;
+    final photos = (json['photos'] as List<dynamic>? ?? [])
+        .map((photo) => ApiService.mediaUrl(photo['path']?.toString()))
+        .where((path) => path.isNotEmpty)
+        .toList();
+
+    return Report(
+      databaseId: json['id'] as int? ?? 0,
+      id: json['ticket_number']?.toString() ?? 'TIK-${json['id']}',
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString() ?? '',
+      location: json['location']?.toString() ?? '',
+      category: json['category']?.toString() ?? '',
+      status: statusLabel(json['status']?.toString()),
+      createdBy:
+          (json['user'] as Map<String, dynamic>?)?['name']?.toString() ??
+          ApiService.currentUser?['name']?.toString() ??
+          'User',
+      likedBy: const [],
+      staffName: staff?['name']?.toString() ?? '',
+      staffFeedback: task?['staff_notes']?.toString() ?? '',
+      needsReporterFeedback:
+          json['status'] == 'resolved' && json['rating'] == null,
+      reporterRating: json['rating'] as int?,
+      reporterFeedback: json['feedback_notes']?.toString() ?? '',
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+      photoPaths: photos,
+    );
+  }
+
   Report copyWith({
     List<String>? likedBy,
     bool? needsReporterFeedback,
@@ -44,6 +84,7 @@ class Report {
     String? reporterFeedback,
   }) {
     return Report(
+      databaseId: databaseId,
       id: id,
       title: title,
       description: description,
@@ -64,35 +105,85 @@ class Report {
     );
   }
 
+  static String statusLabel(String? status) {
+    return switch (status) {
+      'pending' => 'Menunggu',
+      'assigned' || 'on_progress' => 'Diproses',
+      'blocked' => 'Terkendala',
+      'resolved' => 'Selesai',
+      'rejected' => 'Ditolak',
+      _ => status ?? 'Menunggu',
+    };
+  }
+
   int get likes => likedBy.length;
   String? get coverPhotoPath => photoPaths.isEmpty ? null : photoPaths.first;
-  Uint8List? get coverPhotoBytes => (photoBytesList?.isEmpty ?? true) ? null : photoBytesList!.first;
+  Uint8List? get coverPhotoBytes =>
+      (photoBytesList?.isEmpty ?? true) ? null : photoBytesList!.first;
 }
 
 class ReportProvider extends ChangeNotifier {
-  List<Report> _reports = List.of(_dummyReports);
+  List<Report> _reports = [];
+  List<Report> _myReports = [];
+  bool _loading = false;
+  String? _error;
 
   List<Report> get reports => List.unmodifiable(_reports);
+  bool get loading => _loading;
+  String? get error => _error;
+
+  Future<void> loadFeed() async {
+    await _load(feed: true);
+  }
+
+  Future<void> loadMine() async {
+    _loading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await ApiService.getReports();
+    if (result['success'] == true) {
+      _myReports = (result['data'] as List<dynamic>)
+          .map((item) => Report.fromJson(Map<String, dynamic>.from(item as Map)))
+          .toList();
+    } else {
+      _error = result['message']?.toString();
+    }
+
+    _loading = false;
+    notifyListeners();
+  }
+
+  Future<void> _load({required bool feed}) async {
+    _loading = true;
+    _error = null;
+    notifyListeners();
+
+    final result = await ApiService.getReports(feed: feed);
+    if (result['success'] == true) {
+      _reports = (result['data'] as List<dynamic>)
+          .map((item) => Report.fromJson(Map<String, dynamic>.from(item as Map)))
+          .toList();
+    } else {
+      _error = result['message']?.toString();
+    }
+
+    _loading = false;
+    notifyListeners();
+  }
 
   void addReport(Report report) {
     _reports.insert(0, report);
+    _myReports.insert(0, report);
     notifyListeners();
   }
 
   void toggleLike(String reportId, String userId) {
-    final index = _reports.indexWhere((r) => r.id == reportId);
+    final index = _reports.indexWhere((report) => report.id == reportId);
     if (index == -1) return;
-
-    final r = _reports[index];
-    final newLikedBy = List<String>.from(r.likedBy);
-
-    if (newLikedBy.contains(userId)) {
-      newLikedBy.remove(userId);
-    } else {
-      newLikedBy.add(userId);
-    }
-
-    _reports[index] = r.copyWith(likedBy: newLikedBy);
+    final likedBy = List<String>.from(_reports[index].likedBy);
+    likedBy.contains(userId) ? likedBy.remove(userId) : likedBy.add(userId);
+    _reports[index] = _reports[index].copyWith(likedBy: likedBy);
     notifyListeners();
   }
 
@@ -101,10 +192,9 @@ class ReportProvider extends ChangeNotifier {
     required int rating,
     required String feedback,
   }) {
-    final index = _reports.indexWhere((r) => r.id == reportId);
+    final index = _myReports.indexWhere((report) => report.id == reportId);
     if (index == -1) return;
-
-    _reports[index] = _reports[index].copyWith(
+    _myReports[index] = _myReports[index].copyWith(
       needsReporterFeedback: false,
       reporterRating: rating,
       reporterFeedback: feedback.trim(),
@@ -112,114 +202,5 @@ class ReportProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  List<Report> getByUser(String userId) {
-    return _reports.where((r) => r.createdBy == userId).toList();
-  }
+  List<Report> getByUser(String _) => List.unmodifiable(_myReports);
 }
-
-final List<Report> _dummyReports = [
-  Report(
-    id: 'REP-20260406-193000',
-    title: 'Lampu Koridor Gedung B Lantai 3 Mati',
-    description:
-        'Sejak dua hari terakhir, lampu di koridor lantai 3 Gedung B mati total. Koridor jadi gelap dan berisiko.',
-    location: 'Gedung B, Lantai 3, Koridor Timur',
-    category: 'Penerangan',
-    status: 'Diproses',
-    createdBy: 'mahasiswa_2023',
-    likedBy: ['mahasiswa_2024', 'dosen_01', 'mahasiswa_2025'],
-    staffName: 'Pak Arif (Teknisi Listrik)',
-    staffFeedback:
-        'Tim sudah cek awal. Pergantian komponen dilakukan malam ini di luar jam kuliah.',
-    needsReporterFeedback: false,
-    createdAt: DateTime(2026, 4, 6, 19, 30),
-    photoPaths: const [
-      'https://images.unsplash.com/photo-1524230572899-a752b3835840?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
-    ],
-  ),
-  Report(
-    id: 'REP-20260405-091500',
-    title: 'AC Ruang Kelas 204 Tidak Dingin',
-    description:
-        'AC di ruang 204 hanya mengeluarkan angin tanpa dingin, mengganggu kenyamanan belajar.',
-    location: 'Gedung A, Ruang 204',
-    category: 'Kenyamanan Ruangan',
-    status: 'Menunggu',
-    createdBy: 'bima.putra',
-    likedBy: ['mahasiswa_2024', 'mahasiswa_aktif'],
-    staffName: '',
-    staffFeedback: '',
-    needsReporterFeedback: false,
-    createdAt: DateTime(2026, 4, 5, 9, 15),
-    photoPaths: const [
-      'https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&w=1200&q=80',
-    ],
-  ),
-  Report(
-    id: 'REP-20260403-144500',
-    title: 'Kursi Rusak di Perpustakaan Utama',
-    description:
-        'Beberapa kursi di area baca lantai 2 perpustakaan tidak layak pakai (kaki patah).',
-    location: 'Perpustakaan Utama, Lantai 2',
-    category: 'Furnitur',
-    status: 'Selesai',
-    createdBy: 'salsa_19',
-    likedBy: ['mahasiswa_2023', 'mahasiswa_2024', 'mahasiswa_2025', 'dosen_01'],
-    staffName: 'Bu Rina (Koordinator Perpus)',
-    staffFeedback:
-        'Sudah diganti 5 kursi. Mohon info lagi bila ada kursi lain yang rusak.',
-    needsReporterFeedback: false,
-    createdAt: DateTime(2026, 4, 3, 14, 45),
-    photoPaths: const [
-      'https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80',
-    ],
-  ),
-  Report(
-    id: 'REP-20260408-101000',
-    title: 'Kabel LAN Lab Komputer Terputus',
-    description:
-        'Koneksi internet di 10 PC baris tengah sering putus karena kabel LAN longgar/terputus.',
-    location: 'Lab Komputer 2, Gedung D',
-    category: 'Internet & Jaringan',
-    status: 'Menunggu',
-    createdBy: 'mahasiswa_aktif',
-    likedBy: ['mahasiswa_2024'],
-    staffName: '',
-    staffFeedback: '',
-    needsReporterFeedback: false,
-    createdAt: DateTime(2026, 4, 8, 10, 10),
-  ),
-  Report(
-    id: 'REP-20260407-083000',
-    title: 'Pintu Toilet Pria Lantai 1 Sulit Ditutup',
-    description:
-        'Engsel pintu sudah turun sehingga pintu seret dan tidak bisa tertutup rapat.',
-    location: 'Gedung C, Toilet Pria Lantai 1',
-    category: 'Sanitasi',
-    status: 'Diproses',
-    createdBy: 'mahasiswa_aktif',
-    likedBy: ['mahasiswa_2023', 'dosen_02'],
-    staffName: 'Pak Dimas (Teknisi Umum)',
-    staffFeedback: 'Engsel sedang dipesan, estimasi pemasangan besok pagi.',
-    needsReporterFeedback: false,
-    createdAt: DateTime(2026, 4, 7, 8, 30),
-  ),
-  Report(
-    id: 'REP-20260401-160500',
-    title: 'Proyektor Ruang Sidang Buram',
-    description:
-        'Output proyektor kurang fokus dan warna pudar, mengganggu presentasi kelas.',
-    location: 'Ruang Sidang Fakultas Teknik',
-    category: 'Fasilitas Belajar',
-    status: 'Selesai',
-    createdBy: 'mahasiswa_aktif',
-    likedBy: ['mahasiswa_2023', 'mahasiswa_2024', 'dosen_01'],
-    staffName: 'Bu Sinta (Tim Multimedia)',
-    staffFeedback:
-        'Lensa sudah dibersihkan dan lampu proyektor diganti. Mohon konfirmasi hasilnya.',
-    needsReporterFeedback: true,
-    createdAt: DateTime(2026, 4, 1, 16, 5),
-  ),
-];

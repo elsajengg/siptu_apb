@@ -19,6 +19,13 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
   final String _currentUser =
       'mahasiswa_aktif'; // Simulate current logged-in user
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ReportProvider>().loadFeed();
+    });
+  }
 
   void _like(String reportId, bool currentlyLiked) {
     context.read<ReportProvider>().toggleLike(reportId, _currentUser);
@@ -41,11 +48,15 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
         builder: (_) => const ReportCreatePage(currentUser: 'mahasiswa_aktif'),
       ),
     );
+    if (mounted) {
+      await context.read<ReportProvider>().loadFeed();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final _reports = context.watch<ReportProvider>().reports;
+    final provider = context.watch<ReportProvider>();
+    final _reports = provider.reports;
     final topReports = [..._reports]
       ..sort((a, b) {
         final byLikes = b.likes.compareTo(a.likes);
@@ -86,17 +97,26 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
             totalSelesai: totalSelesai,
           ),
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
-              itemCount: _reports.length,
-              itemBuilder: (context, i) {
-                return _ReportCard(
-                  key: ValueKey(_reports[i].id),
-                  report: _reports[i],
-                  currentUser: _currentUser,
-                  onLike: () => _like(_reports[i].id, _reports[i].likedBy.contains(_currentUser)),
-                );
-              },
+            child: RefreshIndicator(
+              onRefresh: context.read<ReportProvider>().loadFeed,
+              child: provider.loading && _reports.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
+                      itemCount: _reports.length,
+                      itemBuilder: (context, i) {
+                        return _ReportCard(
+                          key: ValueKey(_reports[i].id),
+                          report: _reports[i],
+                          currentUser: _currentUser,
+                          onLike: () => _like(
+                            _reports[i].id,
+                            _reports[i].likedBy.contains(_currentUser),
+                          ),
+                        );
+                      },
+                    ),
             ),
           ),
         ],
@@ -107,7 +127,10 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
         elevation: 1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Buat Pengaduan', style: TextStyle(color: Colors.white)),
+        label: const Text(
+          'Buat Pengaduan',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
     );
   }
@@ -366,7 +389,10 @@ class _ReportCard extends StatelessWidget {
             ),
             if ((report.coverPhotoPath ?? '').trim().isNotEmpty) ...[
               const SizedBox(height: 10),
-              _ReportPhoto(photoPath: report.coverPhotoPath!.trim(), photoBytes: report.coverPhotoBytes),
+              _ReportPhoto(
+                photoPath: report.coverPhotoPath!.trim(),
+                photoBytes: report.coverPhotoBytes,
+              ),
             ],
             const SizedBox(height: 10),
             Row(
@@ -687,7 +713,10 @@ class UpvoteButtonWidget extends StatelessWidget {
               splashColor: Colors.red.withOpacity(0.2),
               highlightColor: Colors.red.withOpacity(0.1),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: bgColor,
                   border: Border.all(color: borderColor, width: 1),
@@ -719,4 +748,3 @@ class UpvoteButtonWidget extends StatelessWidget {
     );
   }
 }
-

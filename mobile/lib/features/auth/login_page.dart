@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/api_service.dart';
+import '../../services/notification_service.dart';
 import '../home/home_shell.dart';
 import '../admin/admin_home.dart';
 import '../staff/staff_home.dart';
@@ -40,19 +41,22 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
 
     if (result['success']) {
+      await NotificationService().syncDeviceToken();
+      if (!mounted) return;
+
       final role = result['data']['user']['role'] ?? '';
       if (role == 'admin') {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AdminHome()),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const AdminHome()));
       } else if (role == 'staff') {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const StaffHome()),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const StaffHome()));
       } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeShell()),
-        );
+        Navigator.of(
+          context,
+        ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeShell()));
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -106,7 +110,10 @@ class _LoginPageState extends State<LoginPage> {
                           SizedBox(height: 4),
                           Text(
                             'Login untuk melapor & memantau tiket fasilitas kampus',
-                            style: TextStyle(color: Colors.white70, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
                         ],
                       ),
@@ -122,7 +129,11 @@ class _LoginPageState extends State<LoginPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(18),
                   boxShadow: const [
-                    BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
                   ],
                 ),
                 child: Form(
@@ -130,9 +141,18 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Masuk', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Masuk',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 4),
-                      const Text('Gunakan akun kampus (NIM/NIP/Email).', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                      const Text(
+                        'Gunakan akun kampus (NIM/NIP/Email).',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
                       const SizedBox(height: 14),
                       TextFormField(
                         controller: _userCtrl,
@@ -141,7 +161,9 @@ class _LoginPageState extends State<LoginPage> {
                           prefixIcon: Icon(Icons.person_outline),
                           border: OutlineInputBorder(),
                         ),
-                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Wajib diisi' : null,
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Wajib diisi'
+                            : null,
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
@@ -152,8 +174,13 @@ class _LoginPageState extends State<LoginPage> {
                           prefixIcon: const Icon(Icons.lock_outline),
                           border: const OutlineInputBorder(),
                           suffixIcon: IconButton(
-                            onPressed: () => setState(() => _obscure = !_obscure),
-                            icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
+                            icon: Icon(
+                              _obscure
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                            ),
                           ),
                         ),
                         validator: (v) {
@@ -168,7 +195,11 @@ class _LoginPageState extends State<LoginPage> {
                         child: TextButton(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Fitur lupa password (placeholder).')),
+                              const SnackBar(
+                                content: Text(
+                                  'Fitur lupa password (placeholder).',
+                                ),
+                              ),
                             );
                           },
                           child: const Text('Lupa password?'),
@@ -182,7 +213,9 @@ class _LoginPageState extends State<LoginPage> {
                           style: FilledButton.styleFrom(backgroundColor: red),
                           onPressed: _loading ? null : _login,
                           child: _loading
-                              ? const CircularProgressIndicator(color: Colors.white)
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
                               : const Text('Login'),
                         ),
                       ),
@@ -193,7 +226,9 @@ class _LoginPageState extends State<LoginPage> {
                         child: OutlinedButton.icon(
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Login SSO (placeholder).')),
+                              const SnackBar(
+                                content: Text('Login SSO (placeholder).'),
+                              ),
                             );
                           },
                           icon: const Icon(Icons.key_outlined),

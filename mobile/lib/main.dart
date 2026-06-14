@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:workmanager/workmanager.dart';
 import 'firebase_options.dart';
 import 'features/splash/splash_page.dart';
@@ -11,9 +12,17 @@ import 'providers/report_provider.dart';
 import 'providers/notification_provider.dart';
 
 @pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+}
+
+@pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
       final notifService = NotificationService();
       await notifService.init();
 
@@ -21,7 +30,7 @@ void callbackDispatcher() {
       final completedToday = TaskService().completedTasks.length;
 
       String title = 'Laporan Harian SIPTU 🏢';
-      String body = completedToday > 0 
+      String body = completedToday > 0
           ? 'Ada $completedToday perbaikan fasilitas yang selesai hari ini.'
           : 'Sistem aman! Tidak ada laporan perbaikan fasilitas hari ini.';
 
@@ -40,12 +49,12 @@ void callbackDispatcher() {
 void _scheduleNextDailyTask() {
   final now = DateTime.now();
   var scheduledDate = DateTime(now.year, now.month, now.day, 17, 0);
-  
+
   // Jika sudah lewat jam 17:00, jadwalkan untuk besok
   if (now.isAfter(scheduledDate)) {
     scheduledDate = scheduledDate.add(const Duration(days: 1));
   }
-  
+
   final initialDelay = scheduledDate.difference(now);
 
   Workmanager().registerOneOffTask(
@@ -58,28 +67,25 @@ void _scheduleNextDailyTask() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+  await NotificationService().init();
 
   if (!kIsWeb) {
-    Workmanager().initialize(
-      callbackDispatcher,
-      isInDebugMode: false,
-    );
-    
+    Workmanager().initialize(callbackDispatcher);
+
     // Daftarkan trigger pertama
     _scheduleNextDailyTask();
   }
 
-    runApp(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => ReportProvider()),
-          ChangeNotifierProvider(create: (_) => NotificationProvider()),
-        ],
-        child: const MyApp(),
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ReportProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+      ],
+      child: const MyApp(),
     ),
   );
 }

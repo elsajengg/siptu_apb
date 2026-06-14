@@ -16,6 +16,14 @@ class _HistoryPageState extends State<HistoryPage> {
   final String _currentUser = 'mahasiswa_aktif';
   String _selectedStatus = 'Semua';
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ReportProvider>().loadMine();
+    });
+  }
+
   List<Report> get _reports => context.watch<ReportProvider>().getByUser(_currentUser);
 
   List<Report> get _filteredReports {
@@ -319,16 +327,20 @@ class _HistoryPageState extends State<HistoryPage> {
                       ],
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      return _HistoryCard(
-                        report: filtered[index],
-                        statusColor: _statusColor(filtered[index].status),
-                        onGiveFeedback: () => _openFeedbackDialog(filtered[index]),
-                      );
-                    },
+                : RefreshIndicator(
+                    onRefresh: () => context.read<ReportProvider>().loadMine(),
+                    child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(12),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        return _HistoryCard(
+                          report: filtered[index],
+                          statusColor: _statusColor(filtered[index].status),
+                          onGiveFeedback: () => _openFeedbackDialog(filtered[index]),
+                        );
+                      },
+                    ),
                   ),
           ),
         ],
