@@ -15,11 +15,37 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Kumpulkan semua data user ke dalam satu variabel array besar
+        $users = [
+            [
+                'name' => 'Bagus Faaza',
+                'email' => 'admin@siptu.test',
+                'password' => bcrypt('admin123'),
+                'role' => 'admin'
+            ],
+            [
+                'name' => 'Muhammad Iqbal',
+                'email' => 'staff@siptu.test',
+                'password' => bcrypt('staff123'),
+                'role' => 'staff'
+            ],
+            [
+                'name' => 'Elsa Ajeng',
+                'email' => 'elsa@siptu.test',
+                'password' => bcrypt('user123'),
+                'role' => 'user'
+            ],
+            [
+                'name' => 'Charlene Ridsianeva',
+                'email' => 'charlene@siptu.test',
+                'password' => bcrypt('user123'),
+                'role' => 'user'
+            ]
+        ];
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Masukkan datanya satu per satu secara otomatis menggunakan looping
+        foreach ($users as $user) {
+            User::create($user);
+        }
     }
 }
