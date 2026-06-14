@@ -3,7 +3,7 @@ import '../../data/api_service.dart';
 import 'verify_report.dart';
 import 'manage_staff.dart';
 import 'admin_profile.dart';
-import 'notification_page.dart';
+
 import 'all_reports_page.dart';
 
 class AdminHome extends StatefulWidget {
@@ -162,10 +162,7 @@ class _AdminDashboardState extends State<_AdminDashboard> {
           ),
           IconButton(
             icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const NotificationPage()),
-            ),
+            onPressed: () {},
           ),
           const SizedBox(width: 4),
         ],

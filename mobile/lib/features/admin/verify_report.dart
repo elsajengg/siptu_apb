@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../data/api_service.dart';
-import 'export_page.dart';
 
 enum FilterDay { hariIni, kemarin, tujuhHari }
 
@@ -375,10 +374,7 @@ class _VerifyReportPageState extends State<VerifyReportPage>
           ),
           IconButton(
             icon: const Icon(Icons.download_outlined, color: Colors.white),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ExportPage()),
-            ),
+            onPressed: () {},
           ),
         ],
         bottom: TabBar(

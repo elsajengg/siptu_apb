@@ -76,6 +76,10 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
+        title: const Text(
+          'Beranda',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -723,11 +727,7 @@ class UpvoteButtonWidget extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      Icons.keyboard_arrow_up_rounded,
-                      size: 22,
-                      color: color,
-                    ),
+                    Icon(Icons.thumb_up_alt_rounded, size: 22, color: color),
                     Text(
                       '$upvotes',
                       style: TextStyle(

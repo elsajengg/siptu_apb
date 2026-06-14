@@ -17,6 +17,7 @@ class _HomeShellState extends State<HomeShell> {
   static const _tabMeta = <({IconData icon, String label})>[
     (icon: Icons.dashboard_outlined, label: 'Laporan'),
     (icon: Icons.history_outlined, label: 'Riwayat'),
+    (icon: Icons.notifications_outlined, label: 'Notifikasi'),
     (icon: Icons.person_outline, label: 'Profil'),
   ];
 
@@ -25,6 +26,7 @@ class _HomeShellState extends State<HomeShell> {
     final pages = [
       const ReportFeedPage(),
       const HistoryPage(),
+      const _NotificationPlaceholder(),
       const UserProfilePage(),
     ];
 
@@ -149,6 +151,26 @@ class _ProfileStat extends StatelessWidget {
               style: const TextStyle(fontSize: 12, color: Colors.black54),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NotificationPlaceholder extends StatelessWidget {
+  const _NotificationPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.red.shade800,
+        title: const Text('Notifikasi', style: TextStyle(color: Colors.white)),
+      ),
+      body: const Center(
+        child: Text(
+          'Belum ada notifikasi',
+          style: TextStyle(color: Colors.black45),
         ),
       ),
     );
