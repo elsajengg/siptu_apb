@@ -31,7 +31,9 @@ Route::post('/login', function (Request $request) {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/user', fn (Request $request) => $request->user());
+    Route::get('/user', [UserController::class, 'me']);
+    Route::patch('/user', [UserController::class, 'updateMe']);
+    Route::patch('/user/password', [UserController::class, 'updatePassword']);
     Route::post('/logout', function (Request $request) {
         $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Logout berhasil.']);
@@ -43,6 +45,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Staff (admin only)
     Route::get('/staff', [UserController::class, 'staff'])->middleware('role:admin');
+    Route::post('/staff', [UserController::class, 'storeStaff'])->middleware('role:admin');
+    Route::patch('/staff/{staff}', [UserController::class, 'updateStaff'])->middleware('role:admin');
+    Route::delete('/staff/{staff}', [UserController::class, 'destroyStaff'])->middleware('role:admin');
 
     // Reports
     Route::get('/reports/feed', [ReportController::class, 'feed']);

@@ -2,12 +2,12 @@ import 'dart:io' as io;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'task_detail_page.dart';
 import '../../data/task_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:intl/intl.dart';
+import '../../data/api_service.dart';
 
 class UpdateStatusPage extends StatefulWidget {
+  final int? taskDatabaseId;
   final String? initialStatus;
   final String? initialNote;
   final List<XFile>? initialImages;
@@ -17,6 +17,7 @@ class UpdateStatusPage extends StatefulWidget {
 
   const UpdateStatusPage({
     super.key,
+    this.taskDatabaseId,
     this.initialStatus,
     this.initialNote,
     this.initialImages,
@@ -35,8 +36,14 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
   late final TextEditingController _noteController;
   late final List<XFile> _images;
   final ImagePicker _picker = ImagePicker();
+  bool _submitting = false;
 
-  final List<String> _statuses = ['Menunggu', 'Diproses', 'Selesai', 'Terkendala'];
+  final List<String> _statuses = [
+    'Menunggu',
+    'Diproses',
+    'Selesai',
+    'Terkendala',
+  ];
 
   late String _currentTitle;
   late String _currentLocation;
@@ -111,12 +118,19 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12 * _phi),
                 boxShadow: const [
-                  BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4)),
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
+                  ),
                 ],
               ),
               child: Column(
                 children: [
-                  _InfoRow(label: 'ID Tiket', value: widget.taskId ?? '#TGS-001'),
+                  _InfoRow(
+                    label: 'ID Tiket',
+                    value: widget.taskId ?? '#TGS-001',
+                  ),
                   _EditableInfoRow(
                     label: 'Judul',
                     initialValue: _currentTitle,
@@ -131,9 +145,11 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                 ],
               ),
             ),
-            
+
             // Compact History Section
-            if (TaskService().completedTasks.any((t) => t.id == (widget.taskId ?? '#TGS-001'))) ...[
+            if (TaskService().completedTasks.any(
+              (t) => t.id == (widget.taskId ?? '#TGS-001'),
+            )) ...[
               SizedBox(height: 12 * _phi),
               _buildSectionTitle('Riwayat Pembaruan Terakhir'),
               SizedBox(height: 8 * _phi),
@@ -157,14 +173,21 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   },
                   selectedColor: red.withValues(alpha: 0.15),
                   backgroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
-                    side: BorderSide(color: isSelected ? red : Colors.grey.shade300),
+                    side: BorderSide(
+                      color: isSelected ? red : Colors.grey.shade300,
+                    ),
                   ),
                   labelStyle: TextStyle(
                     color: isSelected ? red : Colors.black54,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                     fontSize: 13,
                   ),
                 );
@@ -206,7 +229,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
-                        child: _buildImage(_images[index]),
+                          child: _buildImage(_images[index]),
                         ),
                         Positioned(
                           top: 4,
@@ -216,7 +239,11 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                             child: CircleAvatar(
                               radius: 12,
                               backgroundColor: Colors.black54,
-                              child: const Icon(Icons.close, size: 14, color: Colors.white),
+                              child: const Icon(
+                                Icons.close,
+                                size: 14,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
@@ -235,7 +262,8 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
               maxLines: 4,
               cursorColor: red,
               decoration: InputDecoration(
-                hintText: 'Tuliskan deskripsi perbaikan yang telah dilakukan...',
+                hintText:
+                    'Tuliskan deskripsi perbaikan yang telah dilakukan...',
                 hintStyle: const TextStyle(fontSize: 13, color: Colors.black26),
                 filled: true,
                 fillColor: Colors.white,
@@ -260,62 +288,22 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
-                onPressed: () {
-                  // Save to TaskService
-                  final newTask = CompletedTask(
-                    id: widget.taskId ?? '#TGS-001',
-                    title: _currentTitle,
-                    location: _currentLocation,
-                    date: DateFormat('dd MMM yyyy, HH:mm').format(DateTime.now()),
-                    status: _selectedStatus,
-                    note: _noteController.text,
-                    images: _images,
-                  );
-                  TaskService().addCompletedTask(newTask);
-                  
-                  // Show success feedback
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Row(
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.white),
-                          const SizedBox(width: 12),
-                          Text('Laporan status "${newTask.status}" berhasil dikirim'),
-                        ],
-                      ),
-                      backgroundColor: Colors.green.shade600,
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-
-                  // Navigate directly to Detail Page
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TaskDetailPage(
-                        task: {
-                          'id': newTask.id,
-                          'title': newTask.title,
-                          'status': newTask.status,
-                          'location': newTask.location,
-                        },
-                        localImages: newTask.images,
-                        customNote: newTask.note,
-                      ),
-                    ),
-                  );
-                },
+                onPressed: _submitting ? null : _submitUpdate,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: red,
                   elevation: 4,
                   shadowColor: red.withValues(alpha: 0.4),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 child: const Text(
                   'Kirim Deskripsi Perbaikan',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ),
@@ -325,9 +313,48 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
     );
   }
 
+  Future<void> _submitUpdate() async {
+    if (widget.taskDatabaseId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID tugas database tidak ditemukan.')),
+      );
+      return;
+    }
+    if (_noteController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Catatan teknisi wajib diisi.')),
+      );
+      return;
+    }
+    if (_selectedStatus == 'Selesai' && _images.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Status selesai membutuhkan foto bukti.')),
+      );
+      return;
+    }
+    setState(() => _submitting = true);
+    final result = await ApiService.updateTask(
+      taskId: widget.taskDatabaseId!,
+      status: _selectedStatus == 'Selesai'
+          ? 'resolved'
+          : _selectedStatus == 'Terkendala'
+          ? 'blocked'
+          : 'on_progress',
+      notes: _noteController.text.trim(),
+      photos: _images,
+    );
+    if (!mounted) return;
+    setState(() => _submitting = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result['message']?.toString() ?? 'Update dikirim.'),
+      ),
+    );
+    if (result['success'] == true) Navigator.pop(context, true);
+  }
+
   Widget _buildCompactHistoryList() {
-    final updates = TaskService()
-        .completedTasks
+    final updates = TaskService().completedTasks
         .where((t) => t.id == (widget.taskId ?? '#TGS-001'))
         .take(3) // Show only last 3 for brevity in update screen
         .toList();
@@ -383,7 +410,11 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: -0.2),
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        letterSpacing: -0.2,
+      ),
     );
   }
 
@@ -399,7 +430,11 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
     );
   }
 
-  Widget _buildImageSourceButton({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildImageSourceButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -414,12 +449,20 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
           children: [
             Icon(icon, color: Colors.black54, size: 24),
             const SizedBox(height: 4),
-            Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.black54)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.black54,
+              ),
+            ),
           ],
         ),
       ),
     );
   }
+
   Widget _buildImage(XFile file) {
     if (kIsWeb) {
       return FutureBuilder<Uint8List>(
@@ -461,7 +504,11 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
   final bool isLast;
-  const _InfoRow({required this.label, required this.value, this.isLast = false});
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -472,8 +519,17 @@ class _InfoRow extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
-              Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.black54, fontSize: 13),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
             ],
           ),
         ),
@@ -535,7 +591,10 @@ class _EditableInfoRowState extends State<_EditableInfoRow> {
             crossAxisAlignment: CrossAxisAlignment.center,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(widget.label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+              Text(
+                widget.label,
+                style: const TextStyle(color: Colors.black54, fontSize: 13),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 child: _isEditing
@@ -544,18 +603,33 @@ class _EditableInfoRowState extends State<_EditableInfoRow> {
                         focusNode: _focusNode,
                         onChanged: widget.onChanged,
                         textAlign: TextAlign.right,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                         decoration: InputDecoration(
                           isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 4,
+                          ),
                           border: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black12, width: 1),
+                            borderSide: BorderSide(
+                              color: Colors.black12,
+                              width: 1,
+                            ),
                           ),
                           enabledBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.black12, width: 1),
+                            borderSide: BorderSide(
+                              color: Colors.black12,
+                              width: 1,
+                            ),
                           ),
                           focusedBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.red, width: 1.5),
+                            borderSide: BorderSide(
+                              color: Colors.red,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       )
@@ -572,14 +646,22 @@ class _EditableInfoRowState extends State<_EditableInfoRow> {
                             Flexible(
                               child: Text(
                                 _controller.text,
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                  color: Colors.black87,
+                                ),
                                 textAlign: TextAlign.right,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 6),
-                            const Icon(Icons.edit, size: 14, color: Colors.black38),
+                            const Icon(
+                              Icons.edit,
+                              size: 14,
+                              color: Colors.black38,
+                            ),
                           ],
                         ),
                       ),

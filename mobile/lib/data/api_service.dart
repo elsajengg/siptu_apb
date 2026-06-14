@@ -50,10 +50,7 @@ class ApiService {
   static Future<Map<String, dynamic>> logout() async {
     if (_token == null) return {'success': true};
     try {
-      await http.post(
-        Uri.parse('$baseUrl/logout'),
-        headers: _authHeaders,
-      );
+      await http.post(Uri.parse('$baseUrl/logout'), headers: _authHeaders);
     } catch (_) {}
     _token = null;
     currentUser = null;
@@ -175,6 +172,80 @@ class ApiService {
     return _get('/staff');
   }
 
+  static Future<Map<String, dynamic>> getProfile() async {
+    final result = await _get('/user');
+    if (result['success'] == true) {
+      currentUser = Map<String, dynamic>.from(result['data'] as Map);
+    }
+    return result;
+  }
+
+  static Future<Map<String, dynamic>> updateProfile({
+    required String name,
+    required String email,
+  }) async {
+    final result = await _patchJson('/user', {'name': name, 'email': email});
+    if (result['success'] == true) {
+      currentUser = Map<String, dynamic>.from(result['data'] as Map);
+    }
+    return result;
+  }
+
+  static Future<Map<String, dynamic>> updatePassword({
+    required String currentPassword,
+    required String password,
+  }) {
+    return _patchJson('/user/password', {
+      'current_password': currentPassword,
+      'password': password,
+      'password_confirmation': password,
+    });
+  }
+
+  static Future<Map<String, dynamic>> createStaff({
+    required String name,
+    required String email,
+    required String nip,
+    required String password,
+  }) {
+    return _postJson('/staff', {
+      'name': name,
+      'email': email,
+      'nip': nip.isEmpty ? null : nip,
+      'password': password,
+    }, expectedStatus: 201);
+  }
+
+  static Future<Map<String, dynamic>> updateStaff({
+    required int id,
+    required String name,
+    required String email,
+    required String nip,
+    String? password,
+  }) {
+    return _patchJson('/staff/$id', {
+      'name': name,
+      'email': email,
+      'nip': nip.isEmpty ? null : nip,
+      if (password != null && password.isNotEmpty) 'password': password,
+    });
+  }
+
+  static Future<Map<String, dynamic>> deleteStaff(int id) async {
+    if (_token == null) {
+      return {'success': false, 'message': 'Sesi login tidak ditemukan'};
+    }
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/staff/$id'),
+        headers: _authHeaders,
+      );
+      return _decodeResponse(response);
+    } catch (_) {
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server'};
+    }
+  }
+
   // ──────────────────────────────────────────
   // ASSIGNMENTS
   // ──────────────────────────────────────────
@@ -199,6 +270,21 @@ class ApiService {
     return _postJson('/reports/$reportId/reject', {'reason': reason});
   }
 
+  static Future<Map<String, dynamic>> toggleReportLike(int reportId) {
+    return _postJson('/reports/$reportId/like', {});
+  }
+
+  static Future<Map<String, dynamic>> submitReportFeedback({
+    required int reportId,
+    required int rating,
+    required String notes,
+  }) {
+    return _postJson('/reports/$reportId/feedback', {
+      'rating': rating,
+      'feedback_notes': notes,
+    });
+  }
+
   // ──────────────────────────────────────────
   // TASKS
   // ──────────────────────────────────────────
@@ -219,11 +305,14 @@ class ApiService {
     }
 
     try {
-      final request = http.MultipartRequest(
-          'POST', Uri.parse('$baseUrl/tasks/$taskId/updates'))
-        ..headers.addAll(_authHeaders)
-        ..fields['status'] = status
-        ..fields['notes'] = notes;
+      final request =
+          http.MultipartRequest(
+              'POST',
+              Uri.parse('$baseUrl/tasks/$taskId/updates'),
+            )
+            ..headers.addAll(_authHeaders)
+            ..fields['status'] = status
+            ..fields['notes'] = notes;
 
       for (final photo in photos) {
         request.files.add(
@@ -404,6 +493,25 @@ class ApiService {
         body: jsonEncode(payload),
       );
       return _decodeResponse(response, expectedStatus: expectedStatus);
+    } catch (_) {
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> _patchJson(
+    String path,
+    Map<String, dynamic> payload,
+  ) async {
+    if (_token == null) {
+      return {'success': false, 'message': 'Sesi login tidak ditemukan'};
+    }
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl$path'),
+        headers: {..._authHeaders, 'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      );
+      return _decodeResponse(response);
     } catch (_) {
       return {'success': false, 'message': 'Tidak dapat terhubung ke server'};
     }

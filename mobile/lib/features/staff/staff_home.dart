@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/notification_provider.dart';
-import 'notification_center_screen.dart';
 import 'assigned_tasks.dart';
 import 'update_status.dart';
-import 'task_detail_page.dart';
 import 'staff_profile_page.dart';
+import '../../data/api_service.dart';
 
 class StaffHome extends StatefulWidget {
   const StaffHome({super.key});
@@ -52,65 +49,50 @@ class _StaffHomeState extends State<StaffHome> {
   }
 }
 
-class _StaffDashboard extends StatelessWidget {
+class _StaffDashboard extends StatefulWidget {
   const _StaffDashboard();
 
+  @override
+  State<_StaffDashboard> createState() => _StaffDashboardState();
+}
 
-  static final List<Map<String, dynamic>> _myActiveTasks = [
-    {
-      'id': 'TGS-001',
-      'title': 'Perbaikan AC Ruang 302',
-      'priority': 'Urgent',
-      'difficulty': 'Berat',
-      'deadline': 'Hari ini, 16:00',
-      'status': 'Diproses',
-    },
-    {
-      'id': 'TGS-004',
-      'title': 'Ganti Panel Lantai 2',
-      'priority': 'Urgent',
-      'difficulty': 'Sedang',
-      'deadline': 'Hari ini, 18:00',
-      'status': 'Diproses',
-    },
-    {
-      'id': 'TGS-005',
-      'title': 'Atur Temperatur Server',
-      'priority': 'Urgent',
-      'difficulty': 'Rendah',
-      'deadline': 'Hari ini, 20:00',
-      'status': 'Diproses',
-    },
-    {
-      'id': 'TGS-002',
-      'title': 'Ganti Lampu Selasar Barat',
-      'priority': 'Sedang',
-      'difficulty': 'Rendah',
-      'deadline': 'Besok, 10:00',
-      'status': 'Diproses',
-    },
-    {
-      'id': 'TGS-003',
-      'title': 'Pengecekan Panel Listrik Gedung C',
-      'priority': 'Tinggi',
-      'difficulty': 'Sedang',
-      'deadline': '22 Apr 2026',
-      'status': 'Menunggu',
-    },
-  ];
+class _StaffDashboardState extends State<_StaffDashboard> {
+  List<Map<String, dynamic>> _myActiveTasks = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTasks();
+  }
+
+  Future<void> _loadTasks() async {
+    final result = await ApiService.getTasks();
+    if (!mounted || result['success'] != true) return;
+    setState(() {
+      _myActiveTasks = (result['data'] as List)
+          .map((item) {
+            final task = Map<String, dynamic>.from(item as Map);
+            final report = Map<String, dynamic>.from(
+              task['report'] as Map? ?? {},
+            );
+            return {
+              'databaseId': task['id'],
+              'id': task['task_number']?.toString() ?? '-',
+              'title': report['title']?.toString() ?? '-',
+              'location': report['location']?.toString() ?? '-',
+              'deadline': task['deadline_at']?.toString() ?? '-',
+              'status': task['status'] == 'assigned' ? 'Menunggu' : 'Diproses',
+            };
+          })
+          .where((task) => task['status'] != 'Selesai')
+          .toList();
+    });
+  }
 
   List<Map<String, dynamic>> get _sortedTasks {
     final sorted = List<Map<String, dynamic>>.from(_myActiveTasks);
     sorted.sort((a, b) {
-      const priorityOrder = {'urgent': 0, 'tinggi': 1, 'sedang': 2};
-      final pA = priorityOrder[a['priority'].toString().toLowerCase()] ?? 99;
-      final pB = priorityOrder[b['priority'].toString().toLowerCase()] ?? 99;
-      if (pA != pB) return pA.compareTo(pB);
-      
-      const diffOrder = {'berat': 0, 'sedang': 1, 'rendah': 2};
-      final dA = diffOrder[a['difficulty']?.toString().toLowerCase()] ?? 99;
-      final dB = diffOrder[b['difficulty']?.toString().toLowerCase()] ?? 99;
-      return dA.compareTo(dB);
+      return a['deadline'].toString().compareTo(b['deadline'].toString());
     });
     return sorted;
   }
@@ -132,46 +114,6 @@ class _StaffDashboard extends StatelessWidget {
             fontSize: 18,
           ),
         ),
-        actions: [
-          Consumer<NotificationProvider>(
-            builder: (context, notificationProvider, child) {
-              return IconButton(
-                icon: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_none, color: Colors.white),
-                    if (notificationProvider.hasNotificationToday)
-                      Positioned(
-                        right: 2,
-                        top: 2,
-                        child: Container(
-                          padding: const EdgeInsets.all(1),
-                          decoration: BoxDecoration(
-                            color: Colors.yellow.shade600,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: red, width: 1.5),
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 10,
-                            minHeight: 10,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationCenterScreen(),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -182,12 +124,9 @@ class _StaffDashboard extends StatelessWidget {
             _buildHeroCard(context, red),
             const SizedBox(height: 16),
 
-
-
             // ── Daftar Tugas Aktif ─────────────────────────
             _buildTaskList(context, red),
             const SizedBox(height: 16),
-
           ],
         ),
       ),
@@ -246,12 +185,13 @@ class _StaffDashboard extends StatelessWidget {
                     child: Icon(Icons.engineering, color: red, size: 30),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Budi Santoso',
+                          ApiService.currentUser?['name']?.toString() ??
+                              'Staff',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -259,7 +199,7 @@ class _StaffDashboard extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          'Staff Teknisi • Listrik & AC',
+                          'Staff Teknisi • ${ApiService.currentUser?['nip'] ?? '-'}',
                           style: TextStyle(
                             color: Colors.white70,
                             fontSize: 13,
@@ -278,8 +218,6 @@ class _StaffDashboard extends StatelessWidget {
     );
   }
 
-
-
   Widget _buildTaskList(BuildContext context, Color red) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,7 +229,11 @@ class _StaffDashboard extends StatelessWidget {
             children: [
               const Text(
                 'Tugas Saya Saat Ini',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFF1F2937)),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                  color: Color(0xFF1F2937),
+                ),
               ),
               Text(
                 'Lihat Semua',
@@ -310,10 +252,8 @@ class _StaffDashboard extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           itemCount: _sortedTasks.length,
           separatorBuilder: (_, _) => const SizedBox(height: 10),
-          itemBuilder: (context, index) => _ActiveTaskTile(
-            task: _sortedTasks[index],
-            index: index,
-          ),
+          itemBuilder: (context, index) =>
+              _ActiveTaskTile(task: _sortedTasks[index], index: index),
         ),
       ],
     );
@@ -359,29 +299,17 @@ class _ActiveTaskTile extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () {
-              if (task['status'] == 'Selesai') {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    transitionDuration: const Duration(milliseconds: 500),
-                    pageBuilder: (context, animation, secondaryAnimation) => TaskDetailPage(task: task),
-                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                      return FadeTransition(opacity: animation, child: child);
-                    },
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => UpdateStatusPage(
+                    taskDatabaseId: task['databaseId'] as int,
+                    taskId: task['id'],
+                    taskTitle: task['title'],
+                    taskLocation: task['location'],
                   ),
-                );
-              } else {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UpdateStatusPage(
-                      taskId: task['id'],
-                      taskTitle: task['title'],
-                      taskLocation: 'Lokasi Terlampir',
-                    ),
-                  ),
-                );
-              }
+                ),
+              );
             },
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -394,7 +322,11 @@ class _ActiveTaskTile extends StatelessWidget {
                       color: Colors.red.shade50,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(Icons.build_circle_outlined, color: Colors.red.shade700, size: 26),
+                    child: Icon(
+                      Icons.build_circle_outlined,
+                      color: Colors.red.shade700,
+                      size: 26,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -407,25 +339,40 @@ class _ActiveTaskTile extends StatelessWidget {
                             color: Colors.transparent,
                             child: Text(
                               task['title'],
-                              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF111827)),
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF111827),
+                              ),
                             ),
                           ),
                         ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.access_time_rounded, size: 14, color: Colors.black45),
+                            const Icon(
+                              Icons.access_time_rounded,
+                              size: 14,
+                              color: Colors.black45,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               task['deadline'],
-                              style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.w500),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: Colors.black38),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.black38,
+                  ),
                 ],
               ),
             ),
@@ -435,6 +382,3 @@ class _ActiveTaskTile extends StatelessWidget {
     );
   }
 }
-
-
-

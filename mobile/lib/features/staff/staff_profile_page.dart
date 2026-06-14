@@ -1,11 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/notification_provider.dart';
 import '../auth/login_page.dart';
 import 'completed_tasks_page.dart';
 import '../home/home_shell.dart';
 import 'widgets/profile_header_widget.dart';
+import '../../data/api_service.dart';
 
 class StaffProfilePage extends StatefulWidget {
   const StaffProfilePage({super.key});
@@ -20,11 +18,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
   static const double _avatarRadius = 52.0;
   static const double _sectionMargin = 20.0;
 
-  bool _notificationsEnabled = true; // fallback lokal, tidak lagi dipakai
-  String _name = 'Budi Santoso';
+  String _name = ApiService.currentUser?['name']?.toString() ?? '';
   String _position = 'Staff Teknisi Ahli • Fasilitas & Infrastruktur';
-  String _email = 'budi.santoso@telkomuniversity.ac.id';
-  String _phone = '+62 812-3456-7890';
+  String _email = ApiService.currentUser?['email']?.toString() ?? '';
+  String _phone = '';
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +53,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
             ProfileHeaderWidget(
               name: _name,
               position: _position,
-              nip: '19850612 201012 1 001',
+              nip: ApiService.currentUser?['nip']?.toString() ?? '-',
               onEditTap: _showEditProfileDialog,
             ),
 
@@ -73,18 +70,14 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                 onTap: () => _showEditEmailDialog(),
               ),
               _MenuTile(
-                icon: Icons.phone_android_rounded,
-                title: 'Nomor Telepon',
-                subtitle: _phone,
-                onTap: () => _showEditPhoneDialog(),
-              ),
-              _MenuTile(
                 icon: Icons.assignment_turned_in_rounded,
                 title: 'Riwayat Perbaikan Selesai',
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const CompletedTasksPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const CompletedTasksPage(),
+                    ),
                   );
                 },
               ),
@@ -101,7 +94,6 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                 title: 'Ganti Kata Sandi',
                 onTap: () => _showChangePasswordDialog(),
               ),
-              _buildNotificationTile(red),
               _MenuTile(
                 icon: Icons.logout_rounded,
                 title: 'Keluar Dari Aplikasi',
@@ -118,10 +110,12 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
     );
   }
 
-
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: _sectionMargin + 4, right: _sectionMargin),
+      padding: const EdgeInsets.only(
+        left: _sectionMargin + 4,
+        right: _sectionMargin,
+      ),
       child: Text(
         title,
         style: const TextStyle(
@@ -157,43 +151,17 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
             return Column(
               children: [
                 child,
-                const Divider(height: 1, indent: 56, endIndent: 0, color: Color(0xFFF3F4F6)),
+                const Divider(
+                  height: 1,
+                  indent: 56,
+                  endIndent: 0,
+                  color: Color(0xFFF3F4F6),
+                ),
               ],
             );
           }).toList(),
         ),
       ),
-    );
-  }
-
-  Widget _buildNotificationTile(Color red) {
-    return Consumer<NotificationProvider>(
-      builder: (context, provider, _) {
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-          leading: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.notifications_active_outlined,
-              size: 20,
-              color: Colors.grey.shade700,
-            ),
-          ),
-          title: const Text(
-            'Notifikasi Tugas',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
-          ),
-          trailing: CupertinoSwitch(
-            value: provider.notificationsEnabled,
-            activeColor: Colors.red.shade800,
-            onChanged: provider.toggleNotifications,
-          ),
-        );
-      },
     );
   }
 
@@ -209,7 +177,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Edit Profil', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Edit Profil',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -218,40 +189,69 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
               const SizedBox(height: 16),
               _buildEditField(posCtrl, 'Posisi / Unit', Icons.work_outline),
               const SizedBox(height: 16),
-              _buildEditField(emailCtrl, 'Email', Icons.alternate_email, type: TextInputType.emailAddress),
+              _buildEditField(
+                emailCtrl,
+                'Email',
+                Icons.alternate_email,
+                type: TextInputType.emailAddress,
+              ),
               const SizedBox(height: 16),
-              _buildEditField(phoneCtrl, 'Nomor Telepon', Icons.phone_android_rounded, type: TextInputType.phone),
+              _buildEditField(
+                phoneCtrl,
+                'Nomor Telepon',
+                Icons.phone_android_rounded,
+                type: TextInputType.phone,
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade800,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            onPressed: () {
+            onPressed: () async {
+              final result = await ApiService.updateProfile(
+                name: nameCtrl.text.trim(),
+                email: emailCtrl.text.trim(),
+              );
+              if (!context.mounted || result['success'] != true) return;
               setState(() {
                 _name = nameCtrl.text;
-                _position = posCtrl.text;
                 _email = emailCtrl.text;
-                _phone = phoneCtrl.text;
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Profil berhasil diperbarui')),
               );
             },
-            child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Simpan',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEditField(TextEditingController ctrl, String label, IconData icon, {TextInputType? type}) {
+  Widget _buildEditField(
+    TextEditingController ctrl,
+    String label,
+    IconData icon, {
+    TextInputType? type,
+  }) {
     return TextField(
       controller: ctrl,
       keyboardType: type,
@@ -259,7 +259,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
         labelText: label,
         prefixIcon: Icon(icon, size: 20),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
     );
   }
@@ -270,7 +273,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Edit Email', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Edit Email',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
@@ -281,10 +287,20 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           keyboardType: TextInputType.emailAddress,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade800),
-            onPressed: () {
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade800,
+            ),
+            onPressed: () async {
+              final result = await ApiService.updateProfile(
+                name: _name,
+                email: controller.text.trim(),
+              );
+              if (!context.mounted || result['success'] != true) return;
               setState(() => _email = controller.text);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -304,7 +320,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Edit No. Telepon', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Edit No. Telepon',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
@@ -314,14 +333,21 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
           keyboardType: TextInputType.phone,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade800),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade800,
+            ),
             onPressed: () {
               setState(() => _phone = controller.text);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Nomor telepon berhasil diperbarui')),
+                const SnackBar(
+                  content: Text('Nomor telepon berhasil diperbarui'),
+                ),
               );
             },
             child: const Text('Simpan', style: TextStyle(color: Colors.white)),
@@ -336,7 +362,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Ganti Kata Sandi', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Ganti Kata Sandi',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -344,7 +373,9 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Password Sekarang',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -352,7 +383,9 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Password Baru',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -360,15 +393,22 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Konfirmasi Password Baru',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade800),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade800,
+            ),
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -387,7 +427,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Konfirmasi Logout', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Konfirmasi Logout',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: const Text('Apakah Anda yakin ingin keluar dari akun staf?'),
         actions: [
           TextButton(
@@ -401,7 +444,10 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
                 (route) => false,
               );
             },
-            child: const Text('Ya, Keluar', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Ya, Keluar',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -433,7 +479,10 @@ class _MenuTile extends StatelessWidget {
 
     return ListTile(
       onTap: onTap,
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: subtitle != null ? 4 : 2),
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: subtitle != null ? 4 : 2,
+      ),
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(

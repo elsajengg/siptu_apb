@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../data/api_service.dart';
+import '../../providers/report_provider.dart';
 
 // ── Model data laporan ────────────────────────────────────────
 class ReportData {
@@ -27,6 +29,39 @@ class AllReportsPage extends StatefulWidget {
 }
 
 class _AllReportsPageState extends State<AllReportsPage> {
+  final List<ReportData> _databaseReports = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReports();
+  }
+
+  Future<void> _loadReports() async {
+    final result = await ApiService.getReports();
+    if (!mounted || result['success'] != true) return;
+    setState(() {
+      _databaseReports
+        ..clear()
+        ..addAll(
+          (result['data'] as List).map((item) {
+            final report = Map<String, dynamic>.from(item as Map);
+            final user = Map<String, dynamic>.from(
+              report['user'] as Map? ?? {},
+            );
+            return ReportData(
+              id: report['ticket_number']?.toString() ?? '-',
+              title: report['title']?.toString() ?? '-',
+              category: report['category']?.toString() ?? '-',
+              requester: user['name']?.toString() ?? '-',
+              update: report['created_at']?.toString() ?? '-',
+              status: Report.statusLabel(report['status']?.toString()),
+            );
+          }),
+        );
+    });
+  }
+
   // Filter yang aktif
   String _selectedFilter = 'Semua';
 
@@ -139,8 +174,8 @@ class _AllReportsPageState extends State<AllReportsPage> {
 
   // Getter — return laporan sesuai filter aktif
   List<ReportData> get _filteredReports {
-    if (_selectedFilter == 'Semua') return _allReports;
-    return _allReports.where((r) => r.status == _selectedFilter).toList();
+    if (_selectedFilter == 'Semua') return _databaseReports;
+    return _databaseReports.where((r) => r.status == _selectedFilter).toList();
   }
 
   Color _statusColor(String status) {
@@ -219,7 +254,7 @@ class _AllReportsPageState extends State<AllReportsPage> {
                       ),
                     ),
                     Text(
-                      'Total ${_allReports.length} laporan tersedia',
+                      'Total ${_databaseReports.length} laporan tersedia',
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,

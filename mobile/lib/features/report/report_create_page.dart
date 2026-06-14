@@ -8,20 +8,9 @@ import '../../data/api_service.dart';
 import '../../providers/report_provider.dart';
 
 class ReportCreatePage extends StatefulWidget {
-  final String currentUser;
-  final String? initialNama;
-  final String? initialNIM;
-  final String? initialFakultas;
   final String? initialLocation;
 
-  const ReportCreatePage({
-    super.key,
-    required this.currentUser,
-    this.initialNama,
-    this.initialNIM,
-    this.initialFakultas,
-    this.initialLocation,
-  });
+  const ReportCreatePage({super.key, this.initialLocation});
 
   @override
   State<ReportCreatePage> createState() => _ReportCreatePageState();
@@ -29,9 +18,6 @@ class ReportCreatePage extends StatefulWidget {
 
 class _ReportCreatePageState extends State<ReportCreatePage> {
   final _formKey = GlobalKey<FormState>();
-  final _namaCtrl = TextEditingController();
-  final _nimCtrl = TextEditingController();
-  final _fakultasCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
@@ -46,9 +32,6 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   @override
   void initState() {
     super.initState();
-    _namaCtrl.text = widget.initialNama ?? '';
-    _nimCtrl.text = widget.initialNIM ?? '';
-    _fakultasCtrl.text = widget.initialFakultas ?? '';
     _locationCtrl.text = widget.initialLocation ?? '';
     _loadFacilities();
   }
@@ -105,9 +88,6 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
 
   @override
   void dispose() {
-    _namaCtrl.dispose();
-    _nimCtrl.dispose();
-    _fakultasCtrl.dispose();
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _locationCtrl.dispose();
@@ -199,12 +179,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
       context,
       MaterialPageRoute(
         builder: (context) => ReportSuccessPage(
-          keptData: {
-            'nama': _namaCtrl.text.trim(),
-            'nim': _nimCtrl.text.trim(),
-            'fakultas': _fakultasCtrl.text.trim(),
-            'location': _locationCtrl.text.trim(),
-          },
+          keptData: {'location': _locationCtrl.text.trim()},
         ),
       ),
     );

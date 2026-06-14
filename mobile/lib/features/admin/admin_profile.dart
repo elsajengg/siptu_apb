@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../auth/login_page.dart';
+import '../../data/api_service.dart';
 
 class AdminProfilePage extends StatefulWidget {
   final VoidCallback? onBack;
@@ -10,12 +11,11 @@ class AdminProfilePage extends StatefulWidget {
 }
 
 class _AdminProfilePageState extends State<AdminProfilePage> {
-  String _name = 'Super Admin';
+  String _name = ApiService.currentUser?['name']?.toString() ?? 'Admin';
   String _position = 'Administrator • SIPTU';
-  String _email = 'admin@telkomuniversity.ac.id';
-  String _phone = '+62 811-2233-4455';
-  final String _adminId = 'ADM-2024-001';
-  bool _notifPengaduan = true;
+  String _email = ApiService.currentUser?['email']?.toString() ?? '';
+  String _phone = '';
+  String get _adminId => ApiService.currentUser?['nip']?.toString() ?? '-';
 
   final Color _red = Colors.red.shade800;
 
@@ -86,8 +86,13 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: () {
+            onPressed: () async {
               if (formKey.currentState!.validate()) {
+                final result = await ApiService.updateProfile(
+                  name: nameCtrl.text.trim(),
+                  email: emailCtrl.text.trim(),
+                );
+                if (!context.mounted || result['success'] != true) return;
                 setState(() {
                   _name = nameCtrl.text;
                   _position = posCtrl.text;
@@ -134,7 +139,12 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            onPressed: () {
+            onPressed: () async {
+              final result = await ApiService.updateProfile(
+                name: _name,
+                email: emailCtrl.text.trim(),
+              );
+              if (!context.mounted || result['success'] != true) return;
               setState(() => _email = emailCtrl.text);
               Navigator.pop(context);
               _showSnackBar('Email berhasil diperbarui!', Colors.green);
@@ -487,46 +497,6 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                         icon: Icons.lock_outline,
                         title: 'Ganti Kata Sandi',
                         onTap: _showChangePasswordDialog,
-                      ),
-                      const Divider(height: 1, indent: 56),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.notifications_active_outlined,
-                                color: Colors.blue,
-                                size: 20,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            const Expanded(
-                              child: Text(
-                                'Notifikasi Pengaduan',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            Switch(
-                              value: _notifPengaduan,
-                              onChanged: (val) =>
-                                  setState(() => _notifPengaduan = val),
-                              activeColor: _red,
-                            ),
-                          ],
-                        ),
                       ),
                       const Divider(height: 1, indent: 56),
                       ListTile(

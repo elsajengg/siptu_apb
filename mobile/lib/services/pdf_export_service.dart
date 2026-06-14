@@ -43,7 +43,10 @@ class PdfExportService {
                 pw.SizedBox(height: 24),
                 pw.Text(
                   'Catatan Teknisi:',
-                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14),
+                  style: pw.TextStyle(
+                    fontWeight: pw.FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
                 pw.SizedBox(height: 8),
                 pw.Container(
@@ -51,7 +54,9 @@ class PdfExportService {
                   padding: const pw.EdgeInsets.all(12),
                   decoration: pw.BoxDecoration(
                     color: PdfColors.grey100,
-                    borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                    borderRadius: const pw.BorderRadius.all(
+                      pw.Radius.circular(8),
+                    ),
                     border: pw.Border.all(color: PdfColors.grey300),
                   ),
                   child: pw.Text(
@@ -63,7 +68,10 @@ class PdfExportService {
                 pw.Center(
                   child: pw.Text(
                     'Dihasilkan secara otomatis oleh SIPTU Mobile',
-                    style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey),
+                    style: const pw.TextStyle(
+                      fontSize: 10,
+                      color: PdfColors.grey,
+                    ),
                   ),
                 ),
               ],
@@ -90,13 +98,19 @@ class PdfExportService {
           pw.SizedBox(
             width: 120,
             child: pw.Text(
-              label, 
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)
+              label,
+              style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.grey700,
+              ),
             ),
           ),
           pw.Text(': ', style: pw.TextStyle(color: PdfColors.grey700)),
           pw.Expanded(
-            child: pw.Text(value, style: const pw.TextStyle(color: PdfColors.black)),
+            child: pw.Text(
+              value,
+              style: const pw.TextStyle(color: PdfColors.black),
+            ),
           ),
         ],
       ),

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'export_page.dart';
+import '../../data/api_service.dart';
 
 class ReportItem {
+  final int databaseId;
   final String id;
   final String title;
   final String description;
@@ -15,6 +16,7 @@ class ReportItem {
   DateTime? completedDate;
 
   ReportItem({
+    required this.databaseId,
     required this.id,
     required this.title,
     required this.description,
@@ -59,7 +61,7 @@ class ReportItem {
 }
 
 class StaffOption {
-  final String id;
+  final int id;
   final String name;
   final String specialization;
   final int activeTask;
@@ -90,34 +92,9 @@ class _VerifyReportPageState extends State<VerifyReportPage>
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  final List<StaffOption> _staffList = [
-    StaffOption(
-      id: 'STF-001',
-      name: 'Ahmad Fauzi',
-      specialization: 'Penerangan & Elektronik',
-      activeTask: 2,
-    ),
-    StaffOption(
-      id: 'STF-002',
-      name: 'Budi Santoso',
-      specialization: 'AC & Kenyamanan Ruangan',
-      activeTask: 1,
-    ),
-    StaffOption(
-      id: 'STF-003',
-      name: 'Citra Dewi',
-      specialization: 'Sanitasi & Kebersihan',
-      activeTask: 3,
-    ),
-    StaffOption(
-      id: 'STF-004',
-      name: 'Dendi Pratama',
-      specialization: 'Furnitur & Infrastruktur',
-      activeTask: 0,
-    ),
-  ];
-
-  final List<ReportItem> _allReports = [
+  final List<StaffOption> _staffList = [];
+  final List<ReportItem> _allReports = [];
+  /*
     ReportItem(
       id: 'TIK-001',
       title: 'Lampu Koridor Gedung B Lantai 3 Mati',
@@ -193,7 +170,7 @@ class _VerifyReportPageState extends State<VerifyReportPage>
       assignedStaff: 'Citra Dewi',
       completedDate: DateTime.now().subtract(const Duration(days: 1)),
     ),
-  ];
+  ];*/
 
   @override
   void initState() {
@@ -203,6 +180,71 @@ class _VerifyReportPageState extends State<VerifyReportPage>
       setState(
         () => _searchQuery = _searchController.text.toLowerCase().trim(),
       );
+    });
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final results = await Future.wait([
+      ApiService.getReports(),
+      ApiService.getStaff(),
+    ]);
+    if (!mounted || results.any((result) => result['success'] != true)) return;
+    setState(() {
+      _staffList
+        ..clear()
+        ..addAll(
+          (results[1]['data'] as List).map((item) {
+            final staff = Map<String, dynamic>.from(item as Map);
+            return StaffOption(
+              id: staff['id'] as int,
+              name: staff['name']?.toString() ?? '-',
+              specialization: 'NIP ${staff['nip'] ?? '-'}',
+              activeTask: staff['active_tasks_count'] as int? ?? 0,
+            );
+          }),
+        );
+      _allReports
+        ..clear()
+        ..addAll(
+          (results[0]['data'] as List).map((item) {
+            final report = Map<String, dynamic>.from(item as Map);
+            final user = Map<String, dynamic>.from(
+              report['user'] as Map? ?? {},
+            );
+            final task = Map<String, dynamic>.from(
+              report['task'] as Map? ?? {},
+            );
+            final staff = Map<String, dynamic>.from(
+              task['staff'] as Map? ?? {},
+            );
+            final rawStatus = report['status']?.toString();
+            return ReportItem(
+              databaseId: report['id'] as int,
+              id: report['ticket_number']?.toString() ?? '-',
+              title: report['title']?.toString() ?? '-',
+              description: report['description']?.toString() ?? '-',
+              category: report['category']?.toString() ?? '-',
+              location: report['location']?.toString() ?? '-',
+              requester: user['name']?.toString() ?? '-',
+              date:
+                  DateTime.tryParse(report['created_at']?.toString() ?? '') ??
+                  DateTime.now(),
+              upvotes: report['likes_count'] as int? ?? 0,
+              status: rawStatus == 'pending'
+                  ? 'pending'
+                  : rawStatus == 'resolved'
+                  ? 'done'
+                  : rawStatus == 'rejected'
+                  ? 'reject'
+                  : 'acc',
+              assignedStaff: staff['name']?.toString(),
+              completedDate: DateTime.tryParse(
+                task['completed_at']?.toString() ?? '',
+              ),
+            );
+          }),
+        );
     });
   }
 
@@ -538,12 +580,16 @@ class _VerifyReportPageState extends State<VerifyReportPage>
                         ),
                         onPressed: selectedStaff == null
                             ? null
-                            : () {
-                                setState(() {
-                                  report.status = 'acc';
-                                  report.assignedStaff = selectedStaff!.name;
-                                });
+                            : () async {
+                                final result = await ApiService.assignReport(
+                                  reportId: report.databaseId,
+                                  staffId: selectedStaff!.id,
+                                );
+                                if (!context.mounted) return;
                                 Navigator.pop(context);
+                                if (result['success'] == true) {
+                                  await _loadData();
+                                }
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(
@@ -597,9 +643,14 @@ class _VerifyReportPageState extends State<VerifyReportPage>
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              setState(() => report.status = 'reject');
+            onPressed: () async {
+              final result = await ApiService.rejectReport(
+                reportId: report.databaseId,
+                reason: reasonCtrl.text.trim(),
+              );
+              if (!context.mounted) return;
               Navigator.pop(context);
+              if (result['success'] == true) await _loadData();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Pengaduan "${report.title}" ditolak.'),
@@ -746,7 +797,7 @@ class _VerifyReportPageState extends State<VerifyReportPage>
             tooltip: 'Export PDF',
             onPressed: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const ExportPage()),
+              MaterialPageRoute(builder: (_) => const _ExportRemovedPage()),
             ),
           ),
           const SizedBox(width: 4),
@@ -1000,6 +1051,20 @@ class _VerifyReportPageState extends State<VerifyReportPage>
           onTap: () => _showDetailDialog(report),
         );
       },
+    );
+  }
+}
+
+class _ExportRemovedPage extends StatelessWidget {
+  const _ExportRemovedPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Export Laporan')),
+      body: const Center(
+        child: Text('Export akan menggunakan data laporan dari database.'),
+      ),
     );
   }
 }

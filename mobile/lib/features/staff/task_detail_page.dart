@@ -15,7 +15,7 @@ class TaskDetailPage extends StatelessWidget {
   final String? customNote;
 
   const TaskDetailPage({
-    super.key, 
+    super.key,
     required this.task,
     this.localImages,
     this.customNote,
@@ -24,12 +24,10 @@ class TaskDetailPage extends StatelessWidget {
   static const double _phi = 1.61803398875;
 
   List<CompletedTask> get _taskUpdates {
-    return TaskService()
-        .completedTasks
+    return TaskService().completedTasks
         .where((t) => t.id == task['id'])
         .toList();
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -71,10 +69,7 @@ class TaskDetailPage extends StatelessWidget {
             icon: Icon(Icons.edit_note_rounded, color: red, size: 28),
             tooltip: 'Edit Laporan',
           ),
-          _ShareButtonWidget(
-            task: task,
-            customNote: customNote,
-          ),
+          _ShareButtonWidget(task: task, customNote: customNote),
         ],
       ),
       body: SingleChildScrollView(
@@ -131,24 +126,25 @@ class TaskDetailPage extends StatelessWidget {
                   _buildDetailRow('Lokasi Fasilitas', task['location']),
                   _buildDetailRow('Kategori', 'Pemeliharaan Gedung'),
                   _buildDetailRow('Prioritas', 'Tinggi'),
-                  
+
                   SizedBox(height: 24 * _phi),
 
                   // ── Technician Notes ──────────────────────────────
                   _buildSectionTitle('II. CATATAN TEKNISI'),
                   const SizedBox(height: 12),
                   _EditableNoteWidget(
-                    initialNote: customNote ??
+                    initialNote:
+                        customNote ??
                         'Perbaikan telah dilakukan pada komponen utama. Seluruh fungsi telah diuji kembali dan berjalan normal. Tidak ada kerusakan tambahan yang ditemukan di area sekitar.',
                   ),
-                  
+
                   SizedBox(height: 24 * _phi),
 
                   // ── Visual Documentation ──────────────────────────
                   _buildSectionTitle('III. DOKUMENTASI VISUAL'),
                   const SizedBox(height: 12),
                   _buildPhotoGrid(),
-                  
+
                   SizedBox(height: 32 * _phi),
 
                   // ── Update History ──────────────────────────────
@@ -168,7 +164,11 @@ class TaskDetailPage extends StatelessWidget {
                             border: Border.all(color: Colors.grey.shade300),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.qr_code_2, size: 48, color: Colors.grey.shade400),
+                          child: Icon(
+                            Icons.qr_code_2,
+                            size: 48,
+                            color: Colors.grey.shade400,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(
@@ -283,7 +283,10 @@ class TaskDetailPage extends StatelessWidget {
         children: [
           Icon(Icons.broken_image_outlined, color: Colors.black26, size: 40),
           SizedBox(height: 8),
-          Text('Gagal memuat gambar', style: TextStyle(color: Colors.black26, fontSize: 12)),
+          Text(
+            'Gagal memuat gambar',
+            style: TextStyle(color: Colors.black26, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -293,9 +296,19 @@ class TaskDetailPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.black45, fontWeight: FontWeight.bold)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.black45,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+        ),
       ],
     );
   }
@@ -320,25 +333,39 @@ class TaskDetailPage extends StatelessWidget {
         children: [
           SizedBox(
             width: 120,
-            child: Text(label, style: const TextStyle(fontSize: 13, color: Colors.black54)),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
+            ),
           ),
-          const Text(':  ', style: TextStyle(fontSize: 13, color: Colors.black54)),
+          const Text(
+            ':  ',
+            style: TextStyle(fontSize: 13, color: Colors.black54),
+          ),
           Expanded(
-            child: label == 'Judul Pekerjaan' 
-              ? Hero(
-                  tag: 'task_title_${task['id']}',
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Text(
-                      value,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+            child: label == 'Judul Pekerjaan'
+                ? Hero(
+                    tag: 'task_title_${task['id']}',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        value,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  )
+                : Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
                     ),
                   ),
-                )
-              : Text(
-                  value,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
-                ),
           ),
         ],
       ),
@@ -458,16 +485,15 @@ class _UpdateHistoryTile extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
                 boxShadow: [
-                  BoxShadow(color: Colors.red.shade800.withValues(alpha: 0.3), blurRadius: 4),
+                  BoxShadow(
+                    color: Colors.red.shade800.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                  ),
                 ],
               ),
             ),
             if (!isLast)
-              Container(
-                width: 2,
-                height: 50,
-                color: Colors.grey.shade200,
-              ),
+              Container(width: 2, height: 50, color: Colors.grey.shade200),
           ],
         ),
         const SizedBox(width: 16),
@@ -496,7 +522,11 @@ class _UpdateHistoryTile extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 update.note.isEmpty ? '(Tanpa catatan)' : update.note,
-                style: const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                  height: 1.4,
+                ),
               ),
               if (update.images.isNotEmpty) ...[
                 const SizedBox(height: 8),
@@ -508,8 +538,8 @@ class _UpdateHistoryTile extends StatelessWidget {
                     child: Text(
                       '📎 ${update.images.length} Lampiran foto',
                       style: TextStyle(
-                        fontSize: 10, 
-                        color: Colors.blue.shade700, 
+                        fontSize: 10,
+                        color: Colors.blue.shade700,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.underline,
                       ),
@@ -580,7 +610,7 @@ class _EditableNoteWidgetState extends State<_EditableNoteWidget> {
                     color: Colors.red.withOpacity(0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ]
               : null,
         ),
@@ -687,7 +717,10 @@ class _ShareButtonWidgetState extends State<_ShareButtonWidget> {
           ? const SizedBox(
               width: 20,
               height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.grey),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.grey,
+              ),
             )
           : Icon(Icons.share_outlined, color: Colors.red.shade800),
     );

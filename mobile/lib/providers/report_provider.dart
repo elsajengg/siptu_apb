@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 
 import '../data/api_service.dart';
@@ -14,6 +12,7 @@ class Report {
   final String status;
   final String createdBy;
   final List<String> likedBy;
+  final int likesCount;
   final String staffName;
   final String staffFeedback;
   final bool needsReporterFeedback;
@@ -33,6 +32,7 @@ class Report {
     required this.status,
     required this.createdBy,
     required this.likedBy,
+    this.likesCount = 0,
     required this.staffName,
     required this.staffFeedback,
     this.needsReporterFeedback = false,
@@ -63,7 +63,10 @@ class Report {
           (json['user'] as Map<String, dynamic>?)?['name']?.toString() ??
           ApiService.currentUser?['name']?.toString() ??
           'User',
-      likedBy: const [],
+      likedBy: json['is_liked_by_me'] == true
+          ? [ApiService.currentUser?['id']?.toString() ?? 'current']
+          : const [],
+      likesCount: json['likes_count'] as int? ?? 0,
       staffName: staff?['name']?.toString() ?? '',
       staffFeedback: task?['staff_notes']?.toString() ?? '',
       needsReporterFeedback:
@@ -79,6 +82,7 @@ class Report {
 
   Report copyWith({
     List<String>? likedBy,
+    int? likesCount,
     bool? needsReporterFeedback,
     int? reporterRating,
     String? reporterFeedback,
@@ -93,6 +97,7 @@ class Report {
       status: status,
       createdBy: createdBy,
       likedBy: likedBy ?? this.likedBy,
+      likesCount: likesCount ?? this.likesCount,
       staffName: staffName,
       staffFeedback: staffFeedback,
       needsReporterFeedback:
@@ -116,7 +121,7 @@ class Report {
     };
   }
 
-  int get likes => likedBy.length;
+  int get likes => likesCount;
   String? get coverPhotoPath => photoPaths.isEmpty ? null : photoPaths.first;
   Uint8List? get coverPhotoBytes =>
       (photoBytesList?.isEmpty ?? true) ? null : photoBytesList!.first;
@@ -144,7 +149,9 @@ class ReportProvider extends ChangeNotifier {
     final result = await ApiService.getReports();
     if (result['success'] == true) {
       _myReports = (result['data'] as List<dynamic>)
-          .map((item) => Report.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) => Report.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
           .toList();
     } else {
       _error = result['message']?.toString();
@@ -162,7 +169,9 @@ class ReportProvider extends ChangeNotifier {
     final result = await ApiService.getReports(feed: feed);
     if (result['success'] == true) {
       _reports = (result['data'] as List<dynamic>)
-          .map((item) => Report.fromJson(Map<String, dynamic>.from(item as Map)))
+          .map(
+            (item) => Report.fromJson(Map<String, dynamic>.from(item as Map)),
+          )
           .toList();
     } else {
       _error = result['message']?.toString();
@@ -178,28 +187,43 @@ class ReportProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleLike(String reportId, String userId) {
+  Future<void> toggleLike(String reportId, String userId) async {
     final index = _reports.indexWhere((report) => report.id == reportId);
     if (index == -1) return;
+    final result = await ApiService.toggleReportLike(
+      _reports[index].databaseId,
+    );
+    if (result['success'] != true) return;
+    final data = Map<String, dynamic>.from(result['data'] as Map);
     final likedBy = List<String>.from(_reports[index].likedBy);
-    likedBy.contains(userId) ? likedBy.remove(userId) : likedBy.add(userId);
-    _reports[index] = _reports[index].copyWith(likedBy: likedBy);
+    data['liked'] == true ? likedBy.add(userId) : likedBy.remove(userId);
+    _reports[index] = _reports[index].copyWith(
+      likedBy: likedBy.toSet().toList(),
+      likesCount: data['likes_count'] as int? ?? _reports[index].likes,
+    );
     notifyListeners();
   }
 
-  void submitReporterFeedback({
+  Future<bool> submitReporterFeedback({
     required String reportId,
     required int rating,
     required String feedback,
-  }) {
+  }) async {
     final index = _myReports.indexWhere((report) => report.id == reportId);
-    if (index == -1) return;
+    if (index == -1) return false;
+    final result = await ApiService.submitReportFeedback(
+      reportId: _myReports[index].databaseId,
+      rating: rating,
+      notes: feedback.trim(),
+    );
+    if (result['success'] != true) return false;
     _myReports[index] = _myReports[index].copyWith(
       needsReporterFeedback: false,
       reporterRating: rating,
       reporterFeedback: feedback.trim(),
     );
     notifyListeners();
+    return true;
   }
 
   List<Report> getByUser(String _) => List.unmodifiable(_myReports);

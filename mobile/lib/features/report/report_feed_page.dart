@@ -4,9 +4,9 @@ import 'dart:io';
 
 import 'report_create_page.dart';
 import 'report_detail_page.dart';
-import '../home/home_shell.dart';
 import 'package:provider/provider.dart';
 import '../../providers/report_provider.dart';
+import '../../data/api_service.dart';
 
 class ReportFeedPage extends StatefulWidget {
   const ReportFeedPage({super.key});
@@ -16,8 +16,7 @@ class ReportFeedPage extends StatefulWidget {
 }
 
 class _ReportFeedPageState extends State<ReportFeedPage> {
-  final String _currentUser =
-      'mahasiswa_aktif'; // Simulate current logged-in user
+  String get _currentUser => ApiService.currentUser?['id']?.toString() ?? '';
 
   @override
   void initState() {
@@ -27,8 +26,9 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
     });
   }
 
-  void _like(String reportId, bool currentlyLiked) {
-    context.read<ReportProvider>().toggleLike(reportId, _currentUser);
+  Future<void> _like(String reportId, bool currentlyLiked) async {
+    await context.read<ReportProvider>().toggleLike(reportId, _currentUser);
+    if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -43,11 +43,9 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
   }
 
   Future<void> _openCreate() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const ReportCreatePage(currentUser: 'mahasiswa_aktif'),
-      ),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ReportCreatePage()));
     if (mounted) {
       await context.read<ReportProvider>().loadFeed();
     }
@@ -56,19 +54,19 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ReportProvider>();
-    final _reports = provider.reports;
-    final topReports = [..._reports]
+    final reports = provider.reports;
+    final topReports = [...reports]
       ..sort((a, b) {
         final byLikes = b.likes.compareTo(a.likes);
         if (byLikes != 0) return byLikes;
         return b.createdAt.compareTo(a.createdAt);
       });
     final top3 = topReports.take(3).toList();
-    final totalDukungan = _reports.fold<int>(0, (sum, r) => sum + r.likes);
-    final totalSelesai = _reports
+    final totalDukungan = reports.fold<int>(0, (sum, r) => sum + r.likes);
+    final totalSelesai = reports
         .where((r) => r.status.toLowerCase() == 'selesai')
         .length;
-    final totalDiproses = _reports
+    final totalDiproses = reports
         .where((r) => r.status.toLowerCase() == 'diproses')
         .length;
 
@@ -99,20 +97,20 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: context.read<ReportProvider>().loadFeed,
-              child: provider.loading && _reports.isEmpty
+              child: provider.loading && reports.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : ListView.builder(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(16, 10, 16, 90),
-                      itemCount: _reports.length,
+                      itemCount: reports.length,
                       itemBuilder: (context, i) {
                         return _ReportCard(
-                          key: ValueKey(_reports[i].id),
-                          report: _reports[i],
+                          key: ValueKey(reports[i].id),
+                          report: reports[i],
                           currentUser: _currentUser,
                           onLike: () => _like(
-                            _reports[i].id,
-                            _reports[i].likedBy.contains(_currentUser),
+                            reports[i].id,
+                            reports[i].likedBy.contains(_currentUser),
                           ),
                         );
                       },

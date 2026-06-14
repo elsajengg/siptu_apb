@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../auth/login_page.dart';
 import '../report/history_page.dart';
 import '../home/home_shell.dart';
+import '../../data/api_service.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -12,11 +13,10 @@ class UserProfilePage extends StatefulWidget {
 
 class _UserProfilePageState extends State<UserProfilePage> {
   static const double _phi = 1.61803398875;
-  bool _notificationsEnabled = true;
-  String _name = 'Ahmad Rizki Pratama';
-  String _nim = 'Mahasiswa • 13120080';
-  String _email = 'ahmad.rizki@telkomuniversity.ac.id';
-  String _phone = '+62 812-3456-7890';
+  String _name = ApiService.currentUser?['name']?.toString() ?? '';
+  String _nim = 'USER';
+  String _email = ApiService.currentUser?['email']?.toString() ?? '';
+  String _phone = '';
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +90,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
               ),
             ),
 
-
             // ── Account & Information Section ──────────────────────
             _buildSectionHeader('Informasi Akun'),
             _buildActionCard([
@@ -101,22 +100,17 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 onTap: () => _showEditEmailDialog(),
               ),
               _MenuTile(
-                icon: Icons.phone_android_rounded,
-                title: 'Nomor Telepon',
-                subtitle: _phone,
-                onTap: () => _showEditPhoneDialog(),
-              ),
-              _MenuTile(
                 icon: Icons.history_rounded,
                 title: 'Riwayat Laporan Saya',
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const HistoryPage()),
+                    MaterialPageRoute(
+                      builder: (context) => const HistoryPage(),
+                    ),
                   );
                 },
               ),
-
             ]),
 
             const SizedBox(height: 20 * _phi),
@@ -128,23 +122,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 icon: Icons.lock_outline_rounded,
                 title: 'Ganti Kata Sandi',
                 onTap: () => _showChangePasswordDialog(),
-              ),
-              SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                secondary: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.notifications_active_outlined, size: 20, color: Colors.blue),
-                ),
-                title: const Text(
-                  'Notifikasi Laporan',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-                value: _notificationsEnabled,
-                onChanged: (val) => setState(() => _notificationsEnabled = val),
               ),
               _MenuTile(
                 icon: Icons.logout_rounded,
@@ -201,9 +178,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
         border: Border.all(color: Colors.white, width: 4),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08), 
-            blurRadius: 20, 
-            offset: const Offset(0, 10)
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -211,7 +188,11 @@ class _UserProfilePageState extends State<UserProfilePage> {
         radius: radius,
         backgroundColor: Colors.grey.shade100,
         child: ClipOval(
-          child: Icon(Icons.person, size: radius * 1.2, color: red.withOpacity(0.4)),
+          child: Icon(
+            Icons.person,
+            size: radius * 1.2,
+            color: red.withOpacity(0.4),
+          ),
         ),
       ),
     );
@@ -231,7 +212,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           Icon(Icons.verified_user, size: 14, color: red),
           const SizedBox(width: 8),
           Text(
-            'NIM: 13120080',
+            'ROLE: ${ApiService.currentUser?['role']?.toString().toUpperCase() ?? 'USER'}',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.bold,
@@ -243,7 +224,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
     );
   }
-
 
   Widget _buildSectionHeader(String title) {
     return Padding(
@@ -272,7 +252,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Edit Profil', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Edit Profil',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -281,40 +264,69 @@ class _UserProfilePageState extends State<UserProfilePage> {
               const SizedBox(height: 16),
               _buildEditField(nimCtrl, 'NIM / Status', Icons.school_outlined),
               const SizedBox(height: 16),
-              _buildEditField(emailCtrl, 'Email', Icons.alternate_email, type: TextInputType.emailAddress),
+              _buildEditField(
+                emailCtrl,
+                'Email',
+                Icons.alternate_email,
+                type: TextInputType.emailAddress,
+              ),
               const SizedBox(height: 16),
-              _buildEditField(phoneCtrl, 'Nomor Telepon', Icons.phone_android_rounded, type: TextInputType.phone),
+              _buildEditField(
+                phoneCtrl,
+                'Nomor Telepon',
+                Icons.phone_android_rounded,
+                type: TextInputType.phone,
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade800,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            onPressed: () {
+            onPressed: () async {
+              final result = await ApiService.updateProfile(
+                name: nameCtrl.text.trim(),
+                email: emailCtrl.text.trim(),
+              );
+              if (!context.mounted || result['success'] != true) return;
               setState(() {
                 _name = nameCtrl.text;
-                _nim = nimCtrl.text;
                 _email = emailCtrl.text;
-                _phone = phoneCtrl.text;
               });
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Profil berhasil diperbarui')),
               );
             },
-            child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Simpan',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEditField(TextEditingController ctrl, String label, IconData icon, {TextInputType? type}) {
+  Widget _buildEditField(
+    TextEditingController ctrl,
+    String label,
+    IconData icon, {
+    TextInputType? type,
+  }) {
     return TextField(
       controller: ctrl,
       keyboardType: type,
@@ -322,7 +334,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
         labelText: label,
         prefixIcon: Icon(icon, size: 20),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
     );
   }
@@ -348,10 +363,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             final widget = e.value;
             if (idx == children.length - 1) return widget;
             return Column(
-              children: [
-                widget,
-                const Divider(height: 1, indent: 56),
-              ],
+              children: [widget, const Divider(height: 1, indent: 56)],
             );
           }).toList(),
         ),
@@ -365,7 +377,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Edit Email', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Edit Email',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
@@ -376,10 +391,20 @@ class _UserProfilePageState extends State<UserProfilePage> {
           keyboardType: TextInputType.emailAddress,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade800),
-            onPressed: () {
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade800,
+            ),
+            onPressed: () async {
+              final result = await ApiService.updateProfile(
+                name: _name,
+                email: controller.text.trim(),
+              );
+              if (!context.mounted || result['success'] != true) return;
               setState(() => _email = controller.text);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -399,7 +424,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Edit No. Telepon', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Edit No. Telepon',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
@@ -410,14 +438,21 @@ class _UserProfilePageState extends State<UserProfilePage> {
           keyboardType: TextInputType.phone,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade800),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade800,
+            ),
             onPressed: () {
               setState(() => _phone = controller.text);
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Nomor telepon berhasil diperbarui')),
+                const SnackBar(
+                  content: Text('Nomor telepon berhasil diperbarui'),
+                ),
               );
             },
             child: const Text('Simpan', style: TextStyle(color: Colors.white)),
@@ -432,7 +467,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Ganti Kata Sandi', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Ganti Kata Sandi',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -440,7 +478,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Password Sekarang',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -448,7 +488,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Password Baru',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -456,15 +498,22 @@ class _UserProfilePageState extends State<UserProfilePage> {
               obscureText: true,
               decoration: InputDecoration(
                 labelText: 'Konfirmasi Password Baru',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade800),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade800,
+            ),
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
@@ -497,14 +546,16 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 (route) => false,
               );
             },
-            child: const Text('Ya, Keluar', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Ya, Keluar',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
     );
   }
 }
-
 
 class _MenuTile extends StatelessWidget {
   final IconData icon;
@@ -550,7 +601,11 @@ class _MenuTile extends StatelessWidget {
             )
           : null,
       trailing: showChevron
-          ? const Icon(Icons.chevron_right_rounded, size: 20, color: Colors.black26)
+          ? const Icon(
+              Icons.chevron_right_rounded,
+              size: 20,
+              color: Colors.black26,
+            )
           : null,
     );
   }
@@ -565,12 +620,25 @@ class _BannerPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     // Abstract circles based on phi
-    canvas.drawCircle(Offset(size.width * (1 / _phi), size.height * 0.1), size.width / (_phi * _phi), paint);
-    canvas.drawCircle(Offset(size.width * 0.1, size.height * 0.8), size.width / (_phi * 1.5), paint);
+    canvas.drawCircle(
+      Offset(size.width * (1 / _phi), size.height * 0.1),
+      size.width / (_phi * _phi),
+      paint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.1, size.height * 0.8),
+      size.width / (_phi * 1.5),
+      paint,
+    );
 
     final path = Path()
       ..moveTo(0, size.height * 0.75)
-      ..quadraticBezierTo(size.width / _phi, size.height * 0.95, size.width, size.height * 0.65)
+      ..quadraticBezierTo(
+        size.width / _phi,
+        size.height * 0.95,
+        size.width,
+        size.height * 0.65,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();

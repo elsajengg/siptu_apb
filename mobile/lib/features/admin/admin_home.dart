@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'verify_report.dart';
 import 'manage_staff.dart';
 import 'admin_profile.dart';
-import 'notification_page.dart';
 import 'all_reports_page.dart'; // ← import baru
+import '../../data/api_service.dart';
+import '../../providers/report_provider.dart';
 
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
@@ -69,48 +70,48 @@ class _AdminHomeState extends State<AdminHome> {
   }
 }
 
-class _AdminDashboard extends StatelessWidget {
+class _AdminDashboard extends StatefulWidget {
   const _AdminDashboard();
 
-  static const int _total = 12;
-  static const int _menunggu = 5;
-  static const int _diproses = 4;
-  static const int _selesai = 3;
+  @override
+  State<_AdminDashboard> createState() => _AdminDashboardState();
+}
 
-  static final List<Map<String, dynamic>> _recentReports = [
-    {
-      'id': 'TIK-202604-001',
-      'title': 'Lampu Koridor Gedung B Lantai 3 Mati',
-      'category': 'Penerangan',
-      'requester': 'mahasiswa_2023',
-      'update': '06 Apr 2026 19:30',
-      'status': 'Diproses',
-    },
-    {
-      'id': 'TIK-202604-002',
-      'title': 'AC Ruang Kelas 204 Tidak Dingin',
-      'category': 'Kenyamanan Ruangan',
-      'requester': 'bima.putra',
-      'update': '05 Apr 2026 09:15',
-      'status': 'Menunggu',
-    },
-    {
-      'id': 'TIK-202604-003',
-      'title': 'Kursi Rusak di Perpustakaan Utama',
-      'category': 'Furnitur',
-      'requester': 'salsa_19',
-      'update': '03 Apr 2026 14:45',
-      'status': 'Selesai',
-    },
-    {
-      'id': 'TIK-202604-004',
-      'title': 'Keran Air Bocor di Toilet Lantai 1',
-      'category': 'Sanitasi',
-      'requester': 'agung.pratama',
-      'update': '07 Apr 2026 08:10',
-      'status': 'Diproses',
-    },
-  ];
+class _AdminDashboardState extends State<_AdminDashboard> {
+  List<Map<String, dynamic>> _recentReports = [];
+
+  int get _total => _recentReports.length;
+  int get _menunggu =>
+      _recentReports.where((r) => r['status'] == 'Menunggu').length;
+  int get _diproses =>
+      _recentReports.where((r) => r['status'] == 'Diproses').length;
+  int get _selesai =>
+      _recentReports.where((r) => r['status'] == 'Selesai').length;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReports();
+  }
+
+  Future<void> _loadReports() async {
+    final result = await ApiService.getReports();
+    if (!mounted || result['success'] != true) return;
+    setState(() {
+      _recentReports = (result['data'] as List).map((item) {
+        final report = Map<String, dynamic>.from(item as Map);
+        final user = Map<String, dynamic>.from(report['user'] as Map? ?? {});
+        return {
+          'id': report['ticket_number']?.toString() ?? '-',
+          'title': report['title']?.toString() ?? '-',
+          'category': report['category']?.toString() ?? '-',
+          'requester': user['name']?.toString() ?? '-',
+          'update': report['created_at']?.toString() ?? '-',
+          'status': Report.statusLabel(report['status']?.toString()),
+        };
+      }).toList();
+    });
+  }
 
   Color _statusColor(String status) {
     switch (status.toLowerCase()) {
@@ -142,16 +143,6 @@ class _AdminDashboard extends StatelessWidget {
             fontSize: 18,
           ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const NotificationPage()),
-            ),
-          ),
-          const SizedBox(width: 4),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -204,8 +195,9 @@ class _AdminDashboard extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
-                              'Super Admin',
+                            Text(
+                              ApiService.currentUser?['name']?.toString() ??
+                                  'Admin',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -263,7 +255,7 @@ class _AdminDashboard extends StatelessWidget {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               childAspectRatio: 1.7,
-              children: const [
+              children: [
                 _SummaryCard(
                   label: 'Total Tiket',
                   value: '$_total',

@@ -4,17 +4,14 @@ import 'report_create_page.dart';
 class ReportSuccessPage extends StatelessWidget {
   final Map<String, String> keptData;
 
-  const ReportSuccessPage({
-    super.key,
-    required this.keptData,
-  });
+  const ReportSuccessPage({super.key, required this.keptData});
 
   static const double _phi = 1.61803398875;
 
   @override
   Widget build(BuildContext context) {
     final red = Colors.red.shade800;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -73,16 +70,22 @@ class ReportSuccessPage extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _buildMiniRow(Icons.person_outline, keptData['nama'] ?? '-'),
+                    _buildMiniRow(
+                      Icons.person_outline,
+                      keptData['nama'] ?? '-',
+                    ),
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       child: Divider(height: 1),
                     ),
-                    _buildMiniRow(Icons.place_outlined, keptData['location'] ?? '-'),
+                    _buildMiniRow(
+                      Icons.place_outlined,
+                      keptData['location'] ?? '-',
+                    ),
                   ],
                 ),
               ),
-              
+
               const Spacer(),
 
               // ── Action Buttons ────────────────────────────────
@@ -119,10 +122,6 @@ class ReportSuccessPage extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => ReportCreatePage(
-                          currentUser: 'mahasiswa_aktif',
-                          initialNama: keptData['nama'],
-                          initialNIM: keptData['nim'],
-                          initialFakultas: keptData['fakultas'],
                           initialLocation: keptData['location'],
                         ),
                       ),

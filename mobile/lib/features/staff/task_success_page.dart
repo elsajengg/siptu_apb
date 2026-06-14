@@ -21,7 +21,7 @@ class TaskSuccessPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final red = Colors.red.shade800;
-    
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -72,7 +72,7 @@ class TaskSuccessPage extends StatelessWidget {
 
               // ── Summary Card ──────────────────────────────────
               _buildSummaryCard(taskId, newStatus),
-              
+
               const Spacer(),
 
               // ── Action Buttons ────────────────────────────────
@@ -128,7 +128,11 @@ class TaskSuccessPage extends StatelessWidget {
                   ),
                   child: Text(
                     'Lihat Detail Perbaikan',
-                    style: TextStyle(color: red, fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(
+                      color: red,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ),
@@ -175,7 +179,11 @@ class TaskSuccessPage extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.black45, fontSize: 13, fontWeight: FontWeight.w500),
+          style: const TextStyle(
+            color: Colors.black45,
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         if (isStatus)
           Container(

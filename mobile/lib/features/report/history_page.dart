@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'report_feed_page.dart';
 import 'package:provider/provider.dart';
 import '../../providers/report_provider.dart';
 import 'report_detail_page.dart';
 import '../home/home_shell.dart';
+import '../../data/api_service.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -13,7 +13,7 @@ class HistoryPage extends StatefulWidget {
 }
 
 class _HistoryPageState extends State<HistoryPage> {
-  final String _currentUser = 'mahasiswa_aktif';
+  String get _currentUser => ApiService.currentUser?['id']?.toString() ?? '';
   String _selectedStatus = 'Semua';
 
   @override
@@ -24,15 +24,14 @@ class _HistoryPageState extends State<HistoryPage> {
     });
   }
 
-  List<Report> get _reports => context.watch<ReportProvider>().getByUser(_currentUser);
+  List<Report> get _reports =>
+      context.watch<ReportProvider>().getByUser(_currentUser);
 
   List<Report> get _filteredReports {
     if (_selectedStatus == 'Semua') {
       return _reports;
     }
-    return _reports
-        .where((r) => r.status == _selectedStatus)
-        .toList();
+    return _reports.where((r) => r.status == _selectedStatus).toList();
   }
 
   Color _statusColor(String status) {
@@ -84,12 +83,18 @@ class _HistoryPageState extends State<HistoryPage> {
                       const SizedBox(height: 14),
                       const Text(
                         'Feedback Pengaju',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         report.title,
-                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black54,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -127,7 +132,9 @@ class _HistoryPageState extends State<HistoryPage> {
                                   child: Padding(
                                     padding: const EdgeInsets.all(4),
                                     child: Icon(
-                                      active ? Icons.star_rounded : Icons.star_border_rounded,
+                                      active
+                                          ? Icons.star_rounded
+                                          : Icons.star_border_rounded,
                                       size: 30,
                                       color: const Color(0xFFF59E0B),
                                     ),
@@ -157,11 +164,15 @@ class _HistoryPageState extends State<HistoryPage> {
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE5E7EB),
+                            ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE5E7EB),
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -215,13 +226,23 @@ class _HistoryPageState extends State<HistoryPage> {
       feedbackCtrl.dispose();
       return;
     }
-    context.read<ReportProvider>().submitReporterFeedback(
+    if (!mounted) {
+      feedbackCtrl.dispose();
+      return;
+    }
+    final saved = await context.read<ReportProvider>().submitReporterFeedback(
       reportId: report.id,
       rating: selectedRating,
       feedback: feedbackCtrl.text.trim(),
     );
     feedbackCtrl.dispose();
     if (!mounted) return;
+    if (!saved) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Feedback gagal dikirim.')));
+      return;
+    }
     setState(() {});
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Feedback berhasil dikirim. Terima kasih.')),
@@ -273,23 +294,17 @@ class _HistoryPageState extends State<HistoryPage> {
                 const SizedBox(width: 8),
                 _buildStatusFilter(
                   'Menunggu',
-                  _reports
-                      .where((r) => r.status == 'Menunggu')
-                      .length,
+                  _reports.where((r) => r.status == 'Menunggu').length,
                 ),
                 const SizedBox(width: 8),
                 _buildStatusFilter(
                   'Diproses',
-                  _reports
-                      .where((r) => r.status == 'Diproses')
-                      .length,
+                  _reports.where((r) => r.status == 'Diproses').length,
                 ),
                 const SizedBox(width: 8),
                 _buildStatusFilter(
                   'Selesai',
-                  _reports
-                      .where((r) => r.status == 'Selesai')
-                      .length,
+                  _reports.where((r) => r.status == 'Selesai').length,
                 ),
               ],
             ),
@@ -337,7 +352,8 @@ class _HistoryPageState extends State<HistoryPage> {
                         return _HistoryCard(
                           report: filtered[index],
                           statusColor: _statusColor(filtered[index].status),
-                          onGiveFeedback: () => _openFeedbackDialog(filtered[index]),
+                          onGiveFeedback: () =>
+                              _openFeedbackDialog(filtered[index]),
                         );
                       },
                     ),
@@ -429,9 +445,7 @@ class _HistoryCard extends StatelessWidget {
     return InkWell(
       onTap: () {
         Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ReportDetailPage(report: report),
-          ),
+          MaterialPageRoute(builder: (_) => ReportDetailPage(report: report)),
         );
       },
       borderRadius: BorderRadius.circular(12),
@@ -473,11 +487,7 @@ class _HistoryCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(
-                            Icons.place,
-                            size: 14,
-                            color: Colors.grey[600],
-                          ),
+                          Icon(Icons.place, size: 14, color: Colors.grey[600]),
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
@@ -497,8 +507,10 @@ class _HistoryCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withAlpha((0.1 * 255).round()),
                     borderRadius: BorderRadius.circular(8),
@@ -537,10 +549,7 @@ class _HistoryCard extends StatelessWidget {
               children: [
                 Text(
                   'ID: ${report.id}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.black38,
-                  ),
+                  style: const TextStyle(fontSize: 11, color: Colors.black38),
                 ),
                 Row(
                   children: [
@@ -552,10 +561,7 @@ class _HistoryCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       '${report.likes}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                     ),
                   ],
                 ),
@@ -574,7 +580,11 @@ class _HistoryCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.rate_review_outlined, size: 18, color: Color(0xFF92400E)),
+                    const Icon(
+                      Icons.rate_review_outlined,
+                      size: 18,
+                      color: Color(0xFF92400E),
+                    ),
                     const SizedBox(width: 8),
                     const Expanded(
                       child: Text(
@@ -604,7 +614,9 @@ class _HistoryCard extends StatelessWidget {
                 ),
               ),
             ],
-            if (report.status == 'Selesai' && !report.needsReporterFeedback && report.reporterRating != null) ...[
+            if (report.status == 'Selesai' &&
+                !report.needsReporterFeedback &&
+                report.reporterRating != null) ...[
               const SizedBox(height: 10),
               Container(
                 width: double.infinity,
@@ -619,7 +631,11 @@ class _HistoryCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.check_circle_outline, size: 16, color: Color(0xFF166534)),
+                        const Icon(
+                          Icons.check_circle_outline,
+                          size: 16,
+                          color: Color(0xFF166534),
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           'Feedback terkirim • ${_ratingLabel(report.reporterRating ?? 0)}',
@@ -634,9 +650,12 @@ class _HistoryCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: List.generate(5, (index) {
-                        final active = (index + 1) <= (report.reporterRating ?? 0);
+                        final active =
+                            (index + 1) <= (report.reporterRating ?? 0);
                         return Icon(
-                          active ? Icons.star_rounded : Icons.star_border_rounded,
+                          active
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
                           size: 15,
                           color: const Color(0xFFF59E0B),
                         );
@@ -644,8 +663,14 @@ class _HistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      report.reporterFeedback.isEmpty ? 'Tanpa catatan tambahan.' : report.reporterFeedback,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF166534), height: 1.35),
+                      report.reporterFeedback.isEmpty
+                          ? 'Tanpa catatan tambahan.'
+                          : report.reporterFeedback,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF166534),
+                        height: 1.35,
+                      ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),

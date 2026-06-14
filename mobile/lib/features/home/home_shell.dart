@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../report/report_feed_page.dart';
-import '../report/notifications_page.dart';
 import '../report/history_page.dart';
 import '../auth/login_page.dart';
-import '../user/edit_profile.dart';
 import '../user/user_profile_page.dart';
 
 class HomeShell extends StatefulWidget {
@@ -16,13 +14,9 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
-  String _userName = "Elsa Ajeng";
-  String _userEmail = "elsa@email.com";
-  String _userPhone = "+62 812 3456 7890";
   static const _tabMeta = <({IconData icon, String label})>[
     (icon: Icons.dashboard_outlined, label: 'Laporan'),
     (icon: Icons.history_outlined, label: 'Riwayat'),
-    (icon: Icons.notifications_outlined, label: 'Notifikasi'),
     (icon: Icons.person_outline, label: 'Profil'),
   ];
 
@@ -31,7 +25,6 @@ class _HomeShellState extends State<HomeShell> {
     final pages = [
       const ReportFeedPage(),
       const HistoryPage(),
-      const NotificationsPage(),
       const UserProfilePage(),
     ];
 

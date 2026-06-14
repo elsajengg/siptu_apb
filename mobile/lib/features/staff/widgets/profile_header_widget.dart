@@ -157,7 +157,11 @@ class _ProfileAvatar extends StatelessWidget {
       child: CircleAvatar(
         radius: radius,
         backgroundColor: Colors.grey.shade100,
-        child: Icon(Icons.person, size: radius * 1.1, color: red.withOpacity(0.3)),
+        child: Icon(
+          Icons.person,
+          size: radius * 1.1,
+          color: red.withOpacity(0.3),
+        ),
       ),
     );
   }
@@ -217,8 +221,10 @@ class _CurvedBottomClipper extends CustomClipper<Path> {
     final path = Path();
     path.lineTo(0, size.height - 40);
     path.quadraticBezierTo(
-      size.width / 2, size.height + 30, // titik kontrol (kurva membuncit ke bawah)
-      size.width, size.height - 40,
+      size.width / 2,
+      size.height + 30, // titik kontrol (kurva membuncit ke bawah)
+      size.width,
+      size.height - 40,
     );
     path.lineTo(size.width, 0);
     path.close();

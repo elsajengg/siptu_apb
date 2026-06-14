@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../data/api_service.dart';
 
 class StaffData {
   final String id;
@@ -55,6 +56,34 @@ class _ManageStaffPageState extends State<ManageStaffPage> {
       specialization: 'Furnitur & Infrastruktur',
     ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _staffList.clear();
+    _loadStaff();
+  }
+
+  Future<void> _loadStaff() async {
+    final result = await ApiService.getStaff();
+    if (!mounted || result['success'] != true) return;
+    setState(() {
+      _staffList
+        ..clear()
+        ..addAll(
+          (result['data'] as List).map((item) {
+            final staff = Map<String, dynamic>.from(item as Map);
+            return StaffData(
+              id: staff['id'].toString(),
+              name: staff['name']?.toString() ?? '-',
+              email: staff['email']?.toString() ?? '-',
+              password: '',
+              specialization: 'NIP ${staff['nip'] ?? '-'}',
+            );
+          }),
+        );
+    });
+  }
 
   void _showAddStaffDialog() {
     final nameCtrl = TextEditingController();
@@ -117,20 +146,17 @@ class _ManageStaffPageState extends State<ManageStaffPage> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red.shade800),
-            onPressed: () {
+            onPressed: () async {
               if (formKey.currentState!.validate()) {
-                setState(() {
-                  _staffList.add(
-                    StaffData(
-                      id: 'STF-00${_staffList.length + 1}',
-                      name: nameCtrl.text,
-                      email: emailCtrl.text,
-                      password: passCtrl.text,
-                      specialization: specCtrl.text,
-                    ),
-                  );
-                });
+                final result = await ApiService.createStaff(
+                  name: nameCtrl.text.trim(),
+                  email: emailCtrl.text.trim(),
+                  nip: specCtrl.text.trim(),
+                  password: passCtrl.text,
+                );
+                if (!context.mounted || result['success'] != true) return;
                 Navigator.pop(context);
+                await _loadStaff();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Staff berhasil ditambahkan!'),
@@ -207,14 +233,18 @@ class _ManageStaffPageState extends State<ManageStaffPage> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red.shade800),
-            onPressed: () {
+            onPressed: () async {
               if (formKey.currentState!.validate()) {
-                setState(() {
-                  staff.name = nameCtrl.text;
-                  staff.email = emailCtrl.text;
-                  staff.specialization = specCtrl.text;
-                });
+                final result = await ApiService.updateStaff(
+                  id: int.parse(staff.id),
+                  name: nameCtrl.text.trim(),
+                  email: emailCtrl.text.trim(),
+                  nip: specCtrl.text.trim(),
+                  password: passCtrl.text,
+                );
+                if (!context.mounted || result['success'] != true) return;
                 Navigator.pop(context);
+                await _loadStaff();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Data staff berhasil diperbarui!'),
@@ -244,9 +274,11 @@ class _ManageStaffPageState extends State<ManageStaffPage> {
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () {
-              setState(() => _staffList.remove(staff));
+            onPressed: () async {
+              final result = await ApiService.deleteStaff(int.parse(staff.id));
+              if (!context.mounted || result['success'] != true) return;
               Navigator.pop(context);
+              await _loadStaff();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('${staff.name} berhasil dihapus!'),

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -79,8 +78,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 children: [
                   const CircleAvatar(
                     radius: 60,
-                    backgroundImage:
-                        NetworkImage("https://i.pravatar.cc/300"),
+                    backgroundImage: NetworkImage("https://i.pravatar.cc/300"),
                   ),
                   Positioned(
                     bottom: 0,
@@ -148,8 +146,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                         width: 24,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
                         ),
                       )
                     : const Text(
@@ -172,10 +171,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                   side: BorderSide(color: Colors.grey[300]!),
                 ),
-                child: const Text(
-                  "Batal",
-                  style: TextStyle(fontSize: 16),
-                ),
+                child: const Text("Batal", style: TextStyle(fontSize: 16)),
               ),
             ),
           ],
@@ -207,9 +203,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           keyboardType: keyboardType,
           decoration: InputDecoration(
             prefixIcon: Icon(icon),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide(color: Colors.grey[300]!),
