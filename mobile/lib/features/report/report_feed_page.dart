@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'report_create_page.dart';
 import 'report_detail_page.dart';
+import 'top_pengaduan_page.dart';
 import 'package:provider/provider.dart';
 import '../../providers/report_provider.dart';
 import '../../data/api_service.dart';
@@ -55,14 +56,6 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
   Widget build(BuildContext context) {
     final provider = context.watch<ReportProvider>();
     final reports = provider.reports;
-    final topReports = [...reports]
-      ..sort((a, b) {
-        final byLikes = b.likes.compareTo(a.likes);
-        if (byLikes != 0) return byLikes;
-        return b.createdAt.compareTo(a.createdAt);
-      });
-    final top3 = topReports.take(3).toList();
-    final totalDukungan = reports.fold<int>(0, (sum, r) => sum + r.likes);
     final totalSelesai = reports
         .where((r) => r.status.toLowerCase() == 'selesai')
         .length;
@@ -93,8 +86,6 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
       body: Column(
         children: [
           _buildHeader(
-            top3: top3,
-            totalDukungan: totalDukungan,
             totalDiproses: totalDiproses,
             totalSelesai: totalSelesai,
           ),
@@ -109,7 +100,9 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
                       itemCount: reports.length,
                       itemBuilder: (context, i) {
                         return _ReportCard(
-                          key: ValueKey(reports[i].id),
+                          key: ValueKey(
+                            '${reports[i].id}-${reports[i].likes}-${reports[i].likedBy.contains(_currentUser)}',
+                          ),
                           report: reports[i],
                           currentUser: _currentUser,
                           onLike: () => _like(
@@ -137,12 +130,7 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
     );
   }
 
-  Widget _buildHeader({
-    required List<Report> top3,
-    required int totalDukungan,
-    required int totalDiproses,
-    required int totalSelesai,
-  }) {
+  Widget _buildHeader({required int totalDiproses, required int totalSelesai}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -174,32 +162,48 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
                     style: TextStyle(fontSize: 12, color: Colors.white70),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha((0.15 * 255).round()),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.local_fire_department,
-                        size: 16,
-                        color: Colors.amber.shade300,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Trending',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => TopPengaduanPage(
+                            reports: context.read<ReportProvider>().reports,
+                            currentUser: _currentUser,
+                          ),
                         ),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
                       ),
-                    ],
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha((0.15 * 255).round()),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.local_fire_department,
+                            size: 16,
+                            color: Colors.amber.shade300,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Trending',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -208,14 +212,6 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(
-                child: _StatsChip(
-                  icon: Icons.thumb_up_alt_outlined,
-                  label: 'Total Dukungan',
-                  value: '$totalDukungan',
-                ),
-              ),
-              const SizedBox(width: 8),
               Expanded(
                 child: _StatsChip(
                   icon: Icons.settings_suggest_outlined,
@@ -233,40 +229,6 @@ class _ReportFeedPageState extends State<ReportFeedPage> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          if (top3.isEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: const Color(0xFFE5E7EB)),
-              ),
-              child: const Center(
-                child: Text(
-                  'Belum ada pelaporan yang bisa dirangking.',
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
-                ),
-              ),
-            )
-          else
-            SizedBox(
-              height: 126,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: top3.length,
-                separatorBuilder: (_, _) => const SizedBox(width: 10),
-                itemBuilder: (_, i) {
-                  final item = top3[i];
-                  return _TopReportCard(
-                    key: ValueKey('${item.id}-${item.likes}'),
-                    report: item,
-                    rank: i + 1,
-                  );
-                },
-              ),
-            ),
         ],
       ),
     );
@@ -592,83 +554,6 @@ class _ReportPhoto extends StatelessWidget {
           Text(
             'Foto tidak tersedia',
             style: TextStyle(fontSize: 12, color: Colors.black54),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TopReportCard extends StatelessWidget {
-  final Report report;
-  final int rank;
-
-  const _TopReportCard({super.key, required this.report, required this.rank});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 235,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: LinearGradient(
-          colors: [Colors.red.shade800, Colors.red.shade600],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.white.withAlpha((0.2 * 255).round()),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  'Top $rank',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              const Icon(
-                Icons.thumb_up_alt_rounded,
-                size: 16,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                '${report.likes}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            report.title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-            ),
-          ),
-          const Spacer(),
-          Text(
-            '@${report.createdBy}',
-            style: const TextStyle(color: Colors.white70, fontSize: 11),
           ),
         ],
       ),

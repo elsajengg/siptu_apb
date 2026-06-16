@@ -15,6 +15,10 @@ class FacilityController extends Controller
             ->with('room')
             ->where('status', 'active')
             ->when(
+                $request->filled('room_id'),
+                fn ($query) => $query->where('room_id', $request->integer('room_id'))
+            )
+            ->when(
                 $request->filled('category'),
                 fn ($query) => $query->where('category', $request->string('category'))
             )

@@ -8,6 +8,7 @@ class Report {
   final String title;
   final String description;
   final String location;
+  final String roomDetail;
   final String category;
   final String status;
   final String createdBy;
@@ -18,6 +19,7 @@ class Report {
   final bool needsReporterFeedback;
   final int? reporterRating;
   final String reporterFeedback;
+  final List<StaffTaskUpdate> staffUpdates;
   final DateTime createdAt;
   final List<String> photoPaths;
   final List<Uint8List>? photoBytesList;
@@ -28,6 +30,7 @@ class Report {
     required this.title,
     required this.description,
     required this.location,
+    this.roomDetail = '',
     required this.category,
     required this.status,
     required this.createdBy,
@@ -38,6 +41,7 @@ class Report {
     this.needsReporterFeedback = false,
     this.reporterRating,
     this.reporterFeedback = '',
+    this.staffUpdates = const [],
     required this.createdAt,
     this.photoPaths = const [],
     this.photoBytesList,
@@ -46,6 +50,15 @@ class Report {
   factory Report.fromJson(Map<String, dynamic> json) {
     final task = json['task'] as Map<String, dynamic>?;
     final staff = task?['staff'] as Map<String, dynamic>?;
+    final updates =
+        (task?['updates'] as List<dynamic>? ?? [])
+            .map(
+              (update) => StaffTaskUpdate.fromJson(
+                Map<String, dynamic>.from(update as Map),
+              ),
+            )
+            .toList()
+          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final photos = (json['photos'] as List<dynamic>? ?? [])
         .map((photo) => ApiService.mediaUrl(photo['path']?.toString()))
         .where((path) => path.isNotEmpty)
@@ -57,6 +70,7 @@ class Report {
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
       location: json['location']?.toString() ?? '',
+      roomDetail: json['room_detail']?.toString() ?? '',
       category: json['category']?.toString() ?? '',
       status: statusLabel(json['status']?.toString()),
       createdBy:
@@ -69,6 +83,7 @@ class Report {
       likesCount: json['likes_count'] as int? ?? 0,
       staffName: staff?['name']?.toString() ?? '',
       staffFeedback: task?['staff_notes']?.toString() ?? '',
+      staffUpdates: updates,
       needsReporterFeedback:
           json['status'] == 'resolved' && json['rating'] == null,
       reporterRating: json['rating'] as int?,
@@ -93,6 +108,7 @@ class Report {
       title: title,
       description: description,
       location: location,
+      roomDetail: roomDetail,
       category: category,
       status: status,
       createdBy: createdBy,
@@ -104,6 +120,7 @@ class Report {
           needsReporterFeedback ?? this.needsReporterFeedback,
       reporterRating: reporterRating ?? this.reporterRating,
       reporterFeedback: reporterFeedback ?? this.reporterFeedback,
+      staffUpdates: staffUpdates,
       createdAt: createdAt,
       photoPaths: photoPaths,
       photoBytesList: photoBytesList,
@@ -125,6 +142,47 @@ class Report {
   String? get coverPhotoPath => photoPaths.isEmpty ? null : photoPaths.first;
   Uint8List? get coverPhotoBytes =>
       (photoBytesList?.isEmpty ?? true) ? null : photoBytesList!.first;
+}
+
+class StaffTaskUpdate {
+  final int databaseId;
+  final String status;
+  final String notes;
+  final String authorName;
+  final DateTime createdAt;
+  final List<String> photoPaths;
+
+  StaffTaskUpdate({
+    required this.databaseId,
+    required this.status,
+    required this.notes,
+    required this.authorName,
+    required this.createdAt,
+    required this.photoPaths,
+  });
+
+  factory StaffTaskUpdate.fromJson(Map<String, dynamic> json) {
+    final photos = (json['photos'] as List<dynamic>? ?? [])
+        .map((photo) => ApiService.mediaUrl(photo['path']?.toString()))
+        .where((path) => path.isNotEmpty)
+        .toList();
+    return StaffTaskUpdate(
+      databaseId: json['id'] as int? ?? 0,
+      status: switch (json['status']?.toString()) {
+        'on_progress' => 'Progress',
+        'resolved' => 'Selesai',
+        'blocked' => 'Terkendala',
+        _ => json['status']?.toString() ?? 'Progress',
+      },
+      notes: json['notes']?.toString() ?? '',
+      authorName:
+          (json['author'] as Map<String, dynamic>?)?['name']?.toString() ?? '',
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+      photoPaths: photos,
+    );
+  }
 }
 
 class ReportProvider extends ChangeNotifier {
@@ -195,13 +253,38 @@ class ReportProvider extends ChangeNotifier {
     );
     if (result['success'] != true) return;
     final data = Map<String, dynamic>.from(result['data'] as Map);
-    final likedBy = List<String>.from(_reports[index].likedBy);
-    data['liked'] == true ? likedBy.add(userId) : likedBy.remove(userId);
-    _reports[index] = _reports[index].copyWith(
-      likedBy: likedBy.toSet().toList(),
-      likesCount: data['likes_count'] as int? ?? _reports[index].likes,
+    _replaceLikeState(
+      reports: _reports,
+      reportId: reportId,
+      userId: userId,
+      liked: data['liked'] == true,
+      likesCount: data['likes_count'] as int?,
+    );
+    _replaceLikeState(
+      reports: _myReports,
+      reportId: reportId,
+      userId: userId,
+      liked: data['liked'] == true,
+      likesCount: data['likes_count'] as int?,
     );
     notifyListeners();
+  }
+
+  void _replaceLikeState({
+    required List<Report> reports,
+    required String reportId,
+    required String userId,
+    required bool liked,
+    required int? likesCount,
+  }) {
+    final index = reports.indexWhere((report) => report.id == reportId);
+    if (index == -1) return;
+    final likedBy = List<String>.from(reports[index].likedBy);
+    liked ? likedBy.add(userId) : likedBy.remove(userId);
+    reports[index] = reports[index].copyWith(
+      likedBy: likedBy.toSet().toList(),
+      likesCount: likesCount ?? reports[index].likes,
+    );
   }
 
   Future<bool> submitReporterFeedback({

@@ -507,6 +507,14 @@ class _VerifyReportPageState extends State<VerifyReportPage>
                   report['location'] ?? '',
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
+                if ((report['room_detail']?.toString() ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    'Detail ruangan: ${report['room_detail']}',
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                ],
+                _AdminReportPhotos(report: report),
                 const SizedBox(height: 4),
                 Text(
                   'Pelapor: ${report['user']?['name'] ?? '-'}',
@@ -576,4 +584,109 @@ class _VerifyReportPageState extends State<VerifyReportPage>
         return 'Pending';
     }
   }
+}
+
+class _AdminReportPhotos extends StatelessWidget {
+  final Map<String, dynamic> report;
+
+  const _AdminReportPhotos({required this.report});
+
+  @override
+  Widget build(BuildContext context) {
+    final photos = (report['photos'] as List<dynamic>? ?? [])
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .map((photo) => ApiService.mediaUrl(photo['path']?.toString()))
+        .where((path) => path.isNotEmpty)
+        .toList();
+
+    if (photos.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 10, bottom: 6),
+      child: SizedBox(
+        height: 84,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: photos.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
+          itemBuilder: (context, index) {
+            return InkWell(
+              onTap: () => _showAdminReportPhotos(context, photos, index),
+              borderRadius: BorderRadius.circular(10),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  photos[index],
+                  width: 120,
+                  height: 84,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 120,
+                    height: 84,
+                    color: const Color(0xFFF3F4F6),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.broken_image_outlined,
+                      color: Colors.black38,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+void _showAdminReportPhotos(
+  BuildContext context,
+  List<String> photos,
+  int initialIndex,
+) {
+  showDialog(
+    context: context,
+    builder: (context) => Dialog(
+      insetPadding: const EdgeInsets.all(16),
+      backgroundColor: Colors.transparent,
+      child: Stack(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 44),
+            height: MediaQuery.of(context).size.height * 0.72,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: PageView.builder(
+              controller: PageController(initialPage: initialIndex),
+              itemCount: photos.length,
+              itemBuilder: (context, index) => InteractiveViewer(
+                child: Image.network(
+                  photos[index],
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Container(
+                    height: 260,
+                    color: const Color(0xFFF3F4F6),
+                    alignment: Alignment.center,
+                    child: const Text('Foto tidak dapat dimuat'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 0,
+            right: 0,
+            child: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close, color: Colors.white, size: 30),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }

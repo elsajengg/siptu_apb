@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'update_status.dart';
 import 'task_detail_page.dart';
 import '../../data/api_service.dart';
 
@@ -15,6 +14,7 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
 
   String _searchQuery = '';
   String _selectedMonth = 'Semua';
+  String _selectedStatus = 'Semua';
 
   final List<String> _months = [
     'Semua',
@@ -52,27 +52,42 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
               final report = Map<String, dynamic>.from(
                 task['report'] as Map? ?? {},
               );
-              final deadline = DateTime.tryParse(
-                task['deadline_at']?.toString() ?? '',
+              final createdAt = DateTime.tryParse(
+                task['created_at']?.toString() ?? '',
               );
               return {
                 'databaseId': task['id'],
+                ...task,
                 'id': task['task_number']?.toString() ?? '-',
                 'title': report['title']?.toString() ?? '-',
                 'location': report['location']?.toString() ?? '-',
-                'deadline': task['deadline_at']?.toString() ?? '-',
-                'month': deadline == null ? 'Semua' : _months[deadline.month],
-                'status': task['status'] == 'assigned'
-                    ? 'Baru'
-                    : task['status'] == 'resolved'
-                    ? 'Selesai'
-                    : task['status'] == 'blocked'
-                    ? 'Terkendala'
-                    : 'Diproses',
+                'room_detail': report['room_detail']?.toString() ?? '',
+                'month': createdAt == null ? 'Semua' : _months[createdAt.month],
+                'status': _statusLabel(task['status']?.toString()),
               };
             }).toList()
           : [];
     });
+  }
+
+  String _statusLabel(String? status) {
+    return switch (status) {
+      'assigned' => 'Baru',
+      'resolved' => 'Selesai',
+      'blocked' => 'Terkendala',
+      'on_progress' => 'Progress',
+      _ => status ?? 'Baru',
+    };
+  }
+
+  IconData _statusIcon(String status) {
+    return switch (status) {
+      'Baru' => Icons.fiber_new_rounded,
+      'Progress' => Icons.engineering_rounded,
+      'Terkendala' => Icons.warning_amber_rounded,
+      'Selesai' => Icons.task_alt_rounded,
+      _ => Icons.all_inbox_rounded,
+    };
   }
 
   List<Map<String, dynamic>> get _filteredTasks {
@@ -86,7 +101,9 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
           );
       final matchesMonth =
           _selectedMonth == 'Semua' || task['month'] == _selectedMonth;
-      return matchesSearch && matchesMonth;
+      final matchesStatus =
+          _selectedStatus == 'Semua' || task['status'] == _selectedStatus;
+      return matchesSearch && matchesMonth && matchesStatus;
     }).toList();
   }
 
@@ -144,6 +161,63 @@ class _AssignedTasksPageState extends State<AssignedTasksPage> {
                       borderRadius: BorderRadius.circular(12 * _phi),
                       borderSide: BorderSide.none,
                     ),
+                  ),
+                ),
+                SizedBox(height: 12 * _phi),
+                SizedBox(
+                  height: 24 * _phi,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: const [
+                      'Semua',
+                      'Baru',
+                      'Progress',
+                      'Terkendala',
+                      'Selesai',
+                    ].length,
+                    separatorBuilder: (_, _) => SizedBox(width: 8 * _phi),
+                    itemBuilder: (context, index) {
+                      const statuses = [
+                        'Semua',
+                        'Baru',
+                        'Progress',
+                        'Terkendala',
+                        'Selesai',
+                      ];
+                      final status = statuses[index];
+                      final isSelected = _selectedStatus == status;
+                      return FilterChip(
+                        label: Text(status),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) {
+                            setState(() => _selectedStatus = status);
+                          }
+                        },
+                        selectedColor: red.withValues(alpha: 0.15),
+                        backgroundColor: Colors.white,
+                        showCheckmark: false,
+                        avatar: Icon(
+                          _statusIcon(status),
+                          size: 16,
+                          color: isSelected ? red : Colors.black38,
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 8 * _phi),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8 * _phi),
+                          side: BorderSide(
+                            color: isSelected ? red : Colors.grey.shade200,
+                          ),
+                        ),
+                        labelStyle: TextStyle(
+                          color: isSelected ? red : Colors.black54,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                          fontSize: 12,
+                        ),
+                      );
+                    },
                   ),
                 ),
                 SizedBox(height: 12 * _phi),
@@ -241,65 +315,47 @@ class _AssignedTaskCard extends StatelessWidget {
               'Lokasi: ${task['location']}',
               style: const TextStyle(fontSize: 12, color: Colors.black87),
             ),
-            SizedBox(height: 4 * _phi),
-            Row(
-              children: [
-                const Icon(
-                  Icons.calendar_today,
-                  size: 12,
-                  color: Colors.black45,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Deadline: ${task['deadline']}',
-                  style: const TextStyle(fontSize: 11, color: Colors.black54),
-                ),
-              ],
-            ),
+            if (task['room_detail'].toString().isNotEmpty) ...[
+              SizedBox(height: 4 * _phi),
+              Text(
+                'Detail: ${task['room_detail']}',
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            ],
           ],
         ),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: task['status'] == 'Baru'
-                ? Colors.orange.shade50
-                : Colors.blue.shade50,
+            color: _statusColor(task['status']).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             task['status'],
             style: TextStyle(
-              color: task['status'] == 'Baru'
-                  ? Colors.orange.shade800
-                  : Colors.blue.shade800,
+              color: _statusColor(task['status']),
               fontSize: 11,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
         onTap: () {
-          if (task['status'] == 'Selesai') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => TaskDetailPage(task: task),
-              ),
-            );
-          } else {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => UpdateStatusPage(
-                  taskDatabaseId: task['databaseId'] as int,
-                  taskId: task['id'],
-                  taskTitle: task['title'],
-                  taskLocation: task['location'],
-                ),
-              ),
-            );
-          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TaskDetailPage(task: task)),
+          );
         },
       ),
     );
+  }
+
+  Color _statusColor(Object? status) {
+    return switch (status?.toString()) {
+      'Baru' => const Color(0xFFF97316),
+      'Progress' => const Color(0xFF2563EB),
+      'Terkendala' => const Color(0xFFDC2626),
+      'Selesai' => const Color(0xFF16A34A),
+      _ => const Color(0xFF6B7280),
+    };
   }
 }

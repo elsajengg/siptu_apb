@@ -117,6 +117,11 @@ class _HeaderCard extends StatelessWidget {
                           icon: Icons.location_on_rounded,
                           label: report.location,
                         ),
+                        if (report.roomDetail.isNotEmpty)
+                          _Pill(
+                            icon: Icons.pin_drop_rounded,
+                            label: report.roomDetail,
+                          ),
                         _StatusPill(status: report.status),
                       ],
                     ),
@@ -130,27 +135,6 @@ class _HeaderCard extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          const Divider(height: 1, color: Color(0xFFF3F4F6)),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              const Icon(
-                Icons.thumb_up_alt_rounded,
-                size: 18,
-                color: Colors.black38,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${report.likes} dukungan',
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black45,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -327,6 +311,7 @@ class _StaffCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasFeedback = report.staffFeedback.trim().isNotEmpty;
+    final hasUpdates = report.staffUpdates.isNotEmpty;
     final hasReporterFeedback =
         (report.reporterRating != null) ||
         report.reporterFeedback.trim().isNotEmpty;
@@ -355,15 +340,18 @@ class _StaffCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          if (hasFeedback)
-            Text(
-              report.staffFeedback,
-              style: const TextStyle(
-                fontSize: 14,
-                height: 1.5,
-                color: Color(0xFF4B5563),
-              ),
+          if (hasUpdates)
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: report.staffUpdates.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                return _StaffUpdateTile(update: report.staffUpdates[index]);
+              },
             )
+          else if (hasFeedback)
+            _LegacyStaffFeedback(text: report.staffFeedback)
           else
             const Text(
               'Petugas sedang meninjau laporan ini. Mohon tunggu update selanjutnya.',
@@ -490,6 +478,194 @@ class _StaffCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _LegacyStaffFeedback extends StatelessWidget {
+  final String text;
+
+  const _LegacyStaffFeedback({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 14,
+        height: 1.5,
+        color: Color(0xFF4B5563),
+      ),
+    );
+  }
+}
+
+class _StaffUpdateTile extends StatelessWidget {
+  final StaffTaskUpdate update;
+
+  const _StaffUpdateTile({required this.update});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () => _showUpdateDetail(context, update),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              update.status.toLowerCase() == 'selesai'
+                  ? Icons.task_alt_rounded
+                  : Icons.engineering_rounded,
+              size: 20,
+              color: update.status.toLowerCase() == 'selesai'
+                  ? const Color(0xFF16A34A)
+                  : const Color(0xFFF97316),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        update.status,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        _formatDateTime(update.createdAt),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.black38,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    update.notes,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.4,
+                      color: Color(0xFF4B5563),
+                    ),
+                  ),
+                  if (update.photoPaths.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      '${update.photoPaths.length} foto proses',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF2563EB),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void _showUpdateDetail(BuildContext context, StaffTaskUpdate update) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (context) {
+      return DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        maxChildSize: 0.92,
+        builder: (context, controller) {
+          return ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.black12,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Update ${update.status}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '${update.authorName.isEmpty ? 'Staff' : update.authorName} - ${_formatDateTime(update.createdAt)}',
+                style: const TextStyle(fontSize: 12, color: Colors.black45),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                update.notes,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.55,
+                  color: Color(0xFF374151),
+                ),
+              ),
+              if (update.photoPaths.isNotEmpty) ...[
+                const SizedBox(height: 18),
+                const Text(
+                  'Foto Proses',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 10),
+                ...update.photoPaths.map(
+                  (path) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.network(
+                        path,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 180,
+                          color: const Color(0xFFF3F4F6),
+                          alignment: Alignment.center,
+                          child: const Text('Foto tidak dapat dimuat'),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          );
+        },
+      );
+    },
+  );
 }
 
 class _Pill extends StatelessWidget {

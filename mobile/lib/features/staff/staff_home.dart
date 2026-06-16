@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'assigned_tasks.dart';
-import 'update_status.dart';
+import 'task_detail_page.dart';
 import 'staff_profile_page.dart';
 import '../../data/api_service.dart';
 
@@ -57,7 +57,9 @@ class _StaffDashboard extends StatefulWidget {
 }
 
 class _StaffDashboardState extends State<_StaffDashboard> {
-  List<Map<String, dynamic>> _myActiveTasks = [];
+  List<Map<String, dynamic>> _myTasks = [];
+  String _selectedStatus = 'Baru';
+  bool _loading = true;
 
   @override
   void initState() {
@@ -67,35 +69,50 @@ class _StaffDashboardState extends State<_StaffDashboard> {
 
   Future<void> _loadTasks() async {
     final result = await ApiService.getTasks();
-    if (!mounted || result['success'] != true) return;
+    if (!mounted) return;
     setState(() {
-      _myActiveTasks = (result['data'] as List)
-          .map((item) {
-            final task = Map<String, dynamic>.from(item as Map);
-            final report = Map<String, dynamic>.from(
-              task['report'] as Map? ?? {},
-            );
-            return {
-              'databaseId': task['id'],
-              'id': task['task_number']?.toString() ?? '-',
-              'title': report['title']?.toString() ?? '-',
-              'location': report['location']?.toString() ?? '-',
-              'deadline': task['deadline_at']?.toString() ?? '-',
-              'status': task['status'] == 'assigned' ? 'Menunggu' : 'Diproses',
-            };
-          })
-          .where((task) => task['status'] != 'Selesai')
-          .toList();
+      _loading = false;
+      _myTasks = result['success'] == true
+          ? (result['data'] as List).map((item) {
+              final task = Map<String, dynamic>.from(item as Map);
+              final report = Map<String, dynamic>.from(
+                task['report'] as Map? ?? {},
+              );
+              return {
+                'databaseId': task['id'],
+                ...task,
+                'id': task['task_number']?.toString() ?? '-',
+                'title': report['title']?.toString() ?? '-',
+                'location': report['location']?.toString() ?? '-',
+                'room_detail': report['room_detail']?.toString() ?? '',
+                'status': task['status'] == 'assigned'
+                    ? 'Baru'
+                    : task['status'] == 'resolved'
+                    ? 'Selesai'
+                    : 'Progress',
+              };
+            }).toList()
+          : [];
     });
   }
 
   List<Map<String, dynamic>> get _sortedTasks {
-    final sorted = List<Map<String, dynamic>>.from(_myActiveTasks);
+    final sorted = _myTasks
+        .where((task) => task['status'] == _selectedStatus)
+        .map((task) => Map<String, dynamic>.from(task))
+        .toList();
     sorted.sort((a, b) {
-      return a['deadline'].toString().compareTo(b['deadline'].toString());
+      return b['created_at'].toString().compareTo(a['created_at'].toString());
     });
     return sorted;
   }
+
+  int get _activeCount => _myTasks
+      .where((task) => task['status'] == 'Baru' || task['status'] == 'Progress')
+      .length;
+
+  int get _completedCount =>
+      _myTasks.where((task) => task['status'] == 'Selesai').length;
 
   @override
   Widget build(BuildContext context) {
@@ -123,6 +140,8 @@ class _StaffDashboardState extends State<_StaffDashboard> {
             // ── Hero Card ──────────────────────────────────────
             _buildHeroCard(context, red),
             const SizedBox(height: 16),
+            _buildStats(),
+            const SizedBox(height: 16),
 
             // ── Daftar Tugas Aktif ─────────────────────────
             _buildTaskList(context, red),
@@ -130,6 +149,30 @@ class _StaffDashboardState extends State<_StaffDashboard> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStats() {
+    return Row(
+      children: [
+        Expanded(
+          child: _StatBox(
+            icon: Icons.pending_actions_rounded,
+            label: 'Sedang dikerjakan',
+            value: _loading ? '-' : _activeCount.toString(),
+            color: const Color(0xFF2563EB),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatBox(
+            icon: Icons.task_alt_rounded,
+            label: 'Selesai',
+            value: _loading ? '-' : _completedCount.toString(),
+            color: const Color(0xFF16A34A),
+          ),
+        ),
+      ],
     );
   }
 
@@ -146,7 +189,7 @@ class _StaffDashboardState extends State<_StaffDashboard> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.red.shade900.withOpacity(0.4),
+            color: Colors.red.shade900.withValues(alpha: 0.4),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -160,7 +203,7 @@ class _StaffDashboardState extends State<_StaffDashboard> {
             child: Icon(
               Icons.handyman_outlined,
               size: 100,
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white.withValues(alpha: 0.1),
             ),
           ),
           Column(
@@ -176,7 +219,7 @@ class _StaffDashboardState extends State<_StaffDashboard> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -219,6 +262,7 @@ class _StaffDashboardState extends State<_StaffDashboard> {
   }
 
   Widget _buildTaskList(BuildContext context, Color red) {
+    final tasks = _sortedTasks;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -236,7 +280,7 @@ class _StaffDashboardState extends State<_StaffDashboard> {
                 ),
               ),
               Text(
-                'Lihat Semua',
+                '$_activeCount aktif',
                 style: TextStyle(
                   fontSize: 13,
                   color: red,
@@ -246,16 +290,129 @@ class _StaffDashboardState extends State<_StaffDashboard> {
             ],
           ),
         ),
-        ListView.separated(
-          padding: EdgeInsets.zero,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _sortedTasks.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 10),
-          itemBuilder: (context, index) =>
-              _ActiveTaskTile(task: _sortedTasks[index], index: index),
+        Row(
+          children: ['Baru', 'Progress'].map((status) {
+            final selected = _selectedStatus == status;
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: ChoiceChip(
+                  label: Center(child: Text(status)),
+                  selected: selected,
+                  onSelected: (_) => setState(() => _selectedStatus = status),
+                  selectedColor: red.withValues(alpha: 0.12),
+                  backgroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: selected ? red : const Color(0xFFE5E7EB),
+                    ),
+                  ),
+                  labelStyle: TextStyle(
+                    color: selected ? red : Colors.black54,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
         ),
+        const SizedBox(height: 12),
+        if (_loading)
+          const Padding(
+            padding: EdgeInsets.only(top: 24),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (tasks.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE5E7EB)),
+            ),
+            child: Text(
+              'Tidak ada tugas $_selectedStatus.',
+              style: const TextStyle(fontSize: 13, color: Colors.black45),
+            ),
+          )
+        else
+          ListView.separated(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: tasks.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) =>
+                _ActiveTaskTile(task: tasks[index], index: index),
+          ),
       ],
+    );
+  }
+}
+
+class _StatBox extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatBox({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF6B7280),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -287,7 +444,7 @@ class _ActiveTaskTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -302,12 +459,7 @@ class _ActiveTaskTile extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => UpdateStatusPage(
-                    taskDatabaseId: task['databaseId'] as int,
-                    taskId: task['id'],
-                    taskTitle: task['title'],
-                    taskLocation: task['location'],
-                  ),
+                  builder: (context) => TaskDetailPage(task: task),
                 ),
               );
             },
@@ -348,23 +500,17 @@ class _ActiveTaskTile extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.access_time_rounded,
-                              size: 14,
-                              color: Colors.black45,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              task['deadline'],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          task['room_detail'].toString().isEmpty
+                              ? task['location'].toString()
+                              : '${task['location']} - ${task['room_detail']}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),

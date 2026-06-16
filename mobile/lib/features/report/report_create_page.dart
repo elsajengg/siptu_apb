@@ -1,11 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
-import 'report_success_page.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/foundation.dart';
+
 import '../../data/api_service.dart';
 import '../../providers/report_provider.dart';
+import 'report_success_page.dart';
 
 class ReportCreatePage extends StatefulWidget {
   final String? initialLocation;
@@ -21,37 +22,88 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
   final _locationCtrl = TextEditingController();
+  final _roomDetailCtrl = TextEditingController();
+  final _picker = ImagePicker();
 
+  List<Map<String, dynamic>> _rooms = [];
   List<Map<String, dynamic>> _facilities = [];
+  int? _selectedRoomId;
   int? _selectedFacilityId;
+  bool _loadingRooms = true;
   bool _loadingFacilities = true;
-  List<XFile> _photos = [];
-  List<Uint8List> _photoBytes = [];
   bool _submitting = false;
+  final List<XFile> _photos = [];
+  final List<Uint8List> _photoBytes = [];
 
   @override
   void initState() {
     super.initState();
     _locationCtrl.text = widget.initialLocation ?? '';
-    _loadFacilities();
+    _loadRooms();
   }
 
-  Future<void> _loadFacilities() async {
-    final result = await ApiService.getFacilities();
+  @override
+  void dispose() {
+    _titleCtrl.dispose();
+    _descCtrl.dispose();
+    _locationCtrl.dispose();
+    _roomDetailCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadRooms() async {
+    final result = await ApiService.getRooms();
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      final rooms = (result['data'] as List<dynamic>)
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+      setState(() {
+        _rooms = rooms;
+        _loadingRooms = false;
+        _loadingFacilities = rooms.isNotEmpty;
+        if (rooms.isNotEmpty) {
+          _selectedRoomId = rooms.first['id'] as int;
+          _applyRoom(rooms.first, overwriteLocation: false);
+        } else {
+          _loadingFacilities = false;
+        }
+      });
+      if (rooms.isNotEmpty) {
+        await _loadFacilities(roomId: _selectedRoomId);
+      }
+      return;
+    }
+
+    setState(() {
+      _loadingRooms = false;
+      _loadingFacilities = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result['message'] ?? 'Gagal memuat ruangan')),
+    );
+  }
+
+  Future<void> _loadFacilities({int? roomId}) async {
+    setState(() {
+      _loadingFacilities = true;
+      _facilities = [];
+      _selectedFacilityId = null;
+    });
+
+    final result = await ApiService.getFacilities(roomId: roomId);
     if (!mounted) return;
 
     if (result['success'] == true) {
       final facilities = (result['data'] as List<dynamic>)
           .map((item) => Map<String, dynamic>.from(item as Map))
           .toList();
-
       setState(() {
         _facilities = facilities;
         _loadingFacilities = false;
-
         if (facilities.isNotEmpty) {
           _selectedFacilityId = facilities.first['id'] as int;
-          _applyFacility(facilities.first, overwriteLocation: false);
         }
       });
       return;
@@ -63,14 +115,8 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
     );
   }
 
-  void _applyFacility(
-    Map<String, dynamic> facility, {
-    bool overwriteLocation = true,
-  }) {
-    final room = facility['room'] as Map<String, dynamic>?;
-    if (room == null || (!overwriteLocation && _locationCtrl.text.isNotEmpty)) {
-      return;
-    }
+  void _applyRoom(Map<String, dynamic> room, {bool overwriteLocation = true}) {
+    if (!overwriteLocation && _locationCtrl.text.isNotEmpty) return;
 
     _locationCtrl.text =
         '${room['building_name'] ?? ''}, ${room['room_name'] ?? ''}'.replaceAll(
@@ -86,66 +132,67 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
     return null;
   }
 
-  @override
-  void dispose() {
-    _titleCtrl.dispose();
-    _descCtrl.dispose();
-    _locationCtrl.dispose();
-    super.dispose();
-  }
-
   Future<void> _pick(ImageSource source) async {
-    final picker = ImagePicker();
+    if (_photos.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Maksimal 5 foto per laporan.')),
+      );
+      return;
+    }
+
     try {
-      XFile? file;
       if (source == ImageSource.gallery) {
-        final files = await picker.pickMultiImage(
+        final files = await _picker.pickMultiImage(
           maxWidth: 1440,
           imageQuality: 85,
         );
-        if (!mounted) return;
-        if (files.isEmpty) return;
-        List<Uint8List> newBytes = [];
-        for (var f in files) {
-          newBytes.add(await f.readAsBytes());
-        }
-        setState(() {
-          _photos = [..._photos, ...files].take(5).toList();
-          _photoBytes = [..._photoBytes, ...newBytes].take(5).toList();
-        });
+        if (!mounted || files.isEmpty) return;
+        await _appendPhotos(files);
         return;
-      } else {
-        file = await picker.pickImage(
-          source: source,
-          maxWidth: 1440,
-          imageQuality: 85,
-        );
       }
-      if (!mounted) return;
-      if (file == null) return;
-      final bytes = await file.readAsBytes();
-      setState(() {
-        _photos = [..._photos, file!].take(5).toList();
-        _photoBytes = [..._photoBytes, bytes].take(5).toList();
-      });
-    } catch (e) {
+
+      final file = await _picker.pickImage(
+        source: source,
+        maxWidth: 1440,
+        imageQuality: 85,
+      );
+      if (!mounted || file == null) return;
+      await _appendPhotos([file]);
+    } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Gagal akses kamera/galeri. Pastikan izin sudah diaktifkan di pengaturan aplikasi.',
+            'Gagal akses kamera/galeri. Pastikan izin aplikasi sudah aktif.',
           ),
         ),
       );
     }
   }
 
+  Future<void> _appendPhotos(List<XFile> files) async {
+    final remaining = 5 - _photos.length;
+    final selected = files.take(remaining).toList();
+    final bytes = <Uint8List>[];
+    for (final file in selected) {
+      bytes.add(await file.readAsBytes());
+    }
+    if (!mounted) return;
+    setState(() {
+      _photos.addAll(selected);
+      _photoBytes.addAll(bytes);
+    });
+  }
+
   Future<void> _submit() async {
     if (_submitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
+
     if (_selectedFacilityId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pilih fasilitas terlebih dahulu')),
+        const SnackBar(
+          content: Text('Pilih room dan kategori fasilitas dulu.'),
+        ),
       );
       return;
     }
@@ -156,6 +203,7 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
       title: _titleCtrl.text.trim(),
       description: _descCtrl.text.trim(),
       location: _locationCtrl.text.trim(),
+      roomDetail: _roomDetailCtrl.text.trim(),
       photos: _photos,
     );
     if (!mounted) return;
@@ -168,18 +216,25 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
       return;
     }
 
-    await Future.wait([
-      context.read<ReportProvider>().loadFeed(),
-      context.read<ReportProvider>().loadMine(),
-    ]);
+    try {
+      await Future.wait([
+        context.read<ReportProvider>().loadFeed(),
+        context.read<ReportProvider>().loadMine(),
+      ]);
+    } catch (_) {
+      // Laporan sudah tersimpan; refresh list tidak boleh membuat tombol terkunci.
+    }
     if (!mounted) return;
 
-    // Instead of popping, navigate to success page
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => ReportSuccessPage(
-          keptData: {'location': _locationCtrl.text.trim()},
+          keptData: {
+            'ticket': (result['data']?['ticket_number'] ?? '').toString(),
+            'location': _locationCtrl.text.trim(),
+            'room_detail': _roomDetailCtrl.text.trim(),
+          },
         ),
       ),
     );
@@ -188,542 +243,528 @@ class _ReportCreatePageState extends State<ReportCreatePage> {
   @override
   Widget build(BuildContext context) {
     final red = Colors.red.shade800;
-    final redDark = Colors.red.shade900;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-
-      body: Column(
-        children: [
-          /// 🔴 HEADER GRADIENT
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 50, 16, 26),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [redDark, red],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF111827),
+        elevation: 0,
+        title: const Text(
+          'Buat Pengaduan',
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Color(0xFFE5E7EB))),
+          ),
+          child: SizedBox(
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: _submitting ? null : _submit,
+              icon: Icon(
+                _submitting ? Icons.hourglass_top_rounded : Icons.send_rounded,
+                size: 18,
               ),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(28),
+              label: Text(_submitting ? 'Mengirim...' : 'Kirim Pengaduan'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: red,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade300,
+                elevation: 0,
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: red.withAlpha((0.30 * 255).round()),
-                  blurRadius: 22,
-                  offset: const Offset(0, 10),
+            ),
+          ),
+        ),
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+          children: [
+            _IntroPanel(red: red),
+            const SizedBox(height: 16),
+            _FormSection(
+              title: 'Lokasi dan fasilitas',
+              icon: Icons.location_on_outlined,
+              children: [
+                _FieldLabel(
+                  label: 'Room',
+                  child: DropdownButtonFormField<int>(
+                    initialValue: _selectedRoomId,
+                    isExpanded: true,
+                    decoration: _fieldDecoration(
+                      hint: _loadingRooms
+                          ? 'Memuat room...'
+                          : 'Pilih gedung dan ruangan',
+                      icon: Icons.meeting_room_outlined,
+                    ),
+                    items: _rooms.map((room) {
+                      return DropdownMenuItem<int>(
+                        value: room['id'] as int,
+                        child: Text(
+                          '${room['building_name']}, ${room['room_name']}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: _loadingRooms || _rooms.isEmpty
+                        ? null
+                        : (value) {
+                            if (value == null) return;
+                            final room = _rooms.firstWhere(
+                              (item) => item['id'] == value,
+                            );
+                            setState(() {
+                              _selectedRoomId = value;
+                              _applyRoom(room);
+                            });
+                            _loadFacilities(roomId: value);
+                          },
+                    validator: (value) =>
+                        value == null ? 'Room wajib dipilih' : null,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _FieldLabel(
+                  label: 'Kategori fasilitas',
+                  child: DropdownButtonFormField<int>(
+                    initialValue: _selectedFacilityId,
+                    isExpanded: true,
+                    decoration: _fieldDecoration(
+                      hint: _loadingFacilities
+                          ? 'Memuat fasilitas...'
+                          : 'Pilih kategori fasilitas',
+                      icon: Icons.handyman_outlined,
+                    ),
+                    items: _facilities.map((facility) {
+                      return DropdownMenuItem<int>(
+                        value: facility['id'] as int,
+                        child: Text(
+                          '${facility['category'] ?? '-'} - ${facility['name']}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: _loadingFacilities || _facilities.isEmpty
+                        ? null
+                        : (value) {
+                            if (value == null) return;
+                            setState(() {
+                              _selectedFacilityId = value;
+                            });
+                          },
+                    validator: (value) => value == null
+                        ? 'Kategori fasilitas wajib dipilih'
+                        : null,
+                  ),
+                ),
+                if (_selectedFacility != null) ...[
+                  const SizedBox(height: 8),
+                  _InfoStrip(
+                    text:
+                        'Fasilitas: ${_selectedFacility!['name'] ?? '-'} | Kategori: ${_selectedFacility!['category'] ?? '-'}',
+                  ),
+                ] else if (!_loadingFacilities) ...[
+                  const SizedBox(height: 8),
+                  const _InfoStrip(
+                    text:
+                        'Belum ada fasilitas untuk room ini. Pilih room lain atau isi data seeder.',
+                  ),
+                ],
+                const SizedBox(height: 14),
+                _FieldLabel(
+                  label: 'Lokasi',
+                  child: TextFormField(
+                    controller: _locationCtrl,
+                    decoration: _fieldDecoration(
+                      hint: 'Contoh: Gedung SBS, Lab Programming',
+                      icon: Icons.place_outlined,
+                    ),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? 'Tempat wajib diisi'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _FieldLabel(
+                  label: 'Detail ruangan',
+                  helper: 'Contoh: dekat pintu, sisi kanan, bilik kedua.',
+                  child: TextFormField(
+                    controller: _roomDetailCtrl,
+                    textInputAction: TextInputAction.next,
+                    decoration: _fieldDecoration(
+                      hint: 'Tulis detail posisi kerusakan',
+                      icon: Icons.pin_drop_outlined,
+                    ),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? 'Detail ruangan wajib diisi'
+                        : null,
+                  ),
                 ),
               ],
             ),
-            child: Column(
+            const SizedBox(height: 14),
+            _FormSection(
+              title: 'Detail laporan',
+              icon: Icons.assignment_outlined,
+              children: [
+                _FieldLabel(
+                  label: 'Judul',
+                  child: TextFormField(
+                    controller: _titleCtrl,
+                    textInputAction: TextInputAction.next,
+                    decoration: _fieldDecoration(
+                      hint: 'Contoh: AC ruang kelas tidak dingin',
+                      icon: Icons.title_rounded,
+                    ),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? 'Judul wajib diisi'
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _FieldLabel(
+                  label: 'Deskripsi',
+                  helper: 'Jelaskan kondisi, waktu kejadian, dan dampaknya.',
+                  child: TextFormField(
+                    controller: _descCtrl,
+                    minLines: 4,
+                    maxLines: 6,
+                    decoration: _fieldDecoration(
+                      hint: 'Tulis deskripsi laporan...',
+                    ),
+                    validator: (value) =>
+                        (value == null || value.trim().isEmpty)
+                        ? 'Deskripsi wajib diisi'
+                        : null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _FormSection(
+              title: 'Foto pendukung',
+              icon: Icons.image_outlined,
+              trailing: Text(
+                '${_photos.length}/5',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF6B7280),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
               children: [
                 Row(
                   children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        "Buat Pengaduan",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Expanded(
+                      child: _PhotoActionButton(
+                        icon: Icons.photo_library_outlined,
+                        label: 'Galeri',
+                        onTap: () => _pick(ImageSource.gallery),
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha((0.16 * 255).round()),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: const Text(
-                        'Form Cepat',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _PhotoActionButton(
+                        icon: Icons.camera_alt_outlined,
+                        label: 'Kamera',
+                        onTap: () => _pick(ImageSource.camera),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
-                Container(
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withAlpha((0.18 * 255).round()),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: SizedBox()),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Container(
-            margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withAlpha((0.03 * 255).round()),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Row(
-              children: [
-                Icon(
-                  Icons.tips_and_updates_outlined,
-                  size: 16,
-                  color: Colors.black54,
-                ),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    "Gunakan galeri untuk pilih banyak foto sekaligus. Maksimal 5 foto per laporan.",
-                    style: TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          /// 📄 FORM
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: const Color(0xFFE5E7EB)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha((0.04 * 255).round()),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                "Form Pengaduan",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFFEE2E2),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: const Text(
-                                "Step 1 dari 1",
-                                style: TextStyle(
-                                  color: Color(0xFF991B1B),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          "Isi data selengkap mungkin agar laporan lebih cepat ditindaklanjuti.",
-                          style: TextStyle(fontSize: 12, color: Colors.black54),
-                        ),
-                        const SizedBox(height: 16),
-                        _sectionTitle(
-                          icon: Icons.report_problem_outlined,
-                          title: "Detail Pengaduan",
-                        ),
-                        const SizedBox(height: 10),
-
-                        /// FACILITY
-                        _inputWrapper(
-                          child: DropdownButtonFormField<int>(
-                            key: ValueKey(_selectedFacilityId),
-                            initialValue: _selectedFacilityId,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Icons.handyman_outlined),
-                              hintText: 'Pilih fasilitas',
-                            ),
-                            items: _facilities.map((facility) {
-                              final room =
-                                  facility['room'] as Map<String, dynamic>?;
-                              final roomLabel = room == null
-                                  ? ''
-                                  : ' - ${room['building_name']}, ${room['room_name']}';
-
-                              return DropdownMenuItem<int>(
-                                value: facility['id'] as int,
-                                child: Text(
-                                  '${facility['name']}$roomLabel',
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: _loadingFacilities
-                                ? null
-                                : (value) {
-                                    if (value == null) return;
-                                    final facility = _facilities.firstWhere(
-                                      (item) => item['id'] == value,
-                                    );
-                                    setState(() {
-                                      _selectedFacilityId = value;
-                                      _applyFacility(facility);
-                                    });
-                                  },
-                            validator: (value) => value == null
-                                ? 'Fasilitas wajib dipilih'
-                                : null,
-                          ),
-                        ),
-
-                        if (_selectedFacility != null) ...[
-                          const SizedBox(height: 8),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.category_outlined,
-                                  size: 15,
-                                  color: Colors.black45,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Kategori: ${_selectedFacility!['category']}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-
-                        const SizedBox(height: 12),
-
-                        /// TITLE
-                        _inputWrapper(
-                          child: TextFormField(
-                            controller: _titleCtrl,
-                            decoration: const InputDecoration(
-                              hintText: "Judul laporan",
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Icons.title),
-                            ),
-                            validator: (v) => (v == null || v.isEmpty)
-                                ? "Judul wajib diisi"
-                                : null,
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        /// LOCATION
-                        _inputWrapper(
-                          child: TextFormField(
-                            controller: _locationCtrl,
-                            decoration: const InputDecoration(
-                              hintText: "Tempat",
-                              border: InputBorder.none,
-                              prefixIcon: Icon(Icons.place),
-                            ),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? "Tempat wajib diisi"
-                                : null,
-                          ),
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        /// DESKRIPSI
-                        _inputWrapper(
-                          child: TextFormField(
-                            controller: _descCtrl,
-                            minLines: 4,
-                            maxLines: 6,
-                            decoration: const InputDecoration(
-                              hintText: "Deskripsi laporan...",
-                              border: InputBorder.none,
-                            ),
-                            validator: (v) => (v == null || v.trim().isEmpty)
-                                ? "Deskripsi wajib diisi"
-                                : null,
-                          ),
-                        ),
-
-                        const SizedBox(height: 18),
-                        _sectionTitle(
-                          icon: Icons.image_outlined,
-                          title: "Lampiran Foto",
-                        ),
-                        const SizedBox(height: 10),
-
-                        /// FOTO BUTTON
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buttonOutline(
-                                icon: Icons.photo,
-                                text: "Galeri",
-                                onTap: () => _pick(ImageSource.gallery),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: _buttonOutline(
-                                icon: Icons.camera_alt,
-                                text: "Kamera",
-                                onTap: () => _pick(ImageSource.camera),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF3F4F6),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: const Color(0xFFD1D5DB),
-                                ),
-                              ),
-                              child: Text(
-                                '${_photos.length}/5',
-                                style: const TextStyle(
-                                  color: Color(0xFF374151),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        /// PREVIEW FOTO
-                        if (_photos.isNotEmpty)
-                          SizedBox(
-                            height: 96,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _photos.length,
-                              separatorBuilder: (_, _) =>
-                                  const SizedBox(width: 8),
-                              itemBuilder: (_, i) {
-                                return Stack(
-                                  children: [
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
-                                      child: Container(
-                                        width: 120,
-                                        height: 96,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: const Color(0xFFE5E7EB),
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          child: Image.memory(
-                                            _photoBytes[i],
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                                  return const Icon(
-                                                    Icons.broken_image,
-                                                  );
-                                                },
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 4,
-                                      right: 4,
-                                      child: InkWell(
-                                        onTap: () {
-                                          setState(() {
-                                            _photos.removeAt(i);
-                                            _photoBytes.removeAt(i);
-                                          });
-                                        },
-                                        child: Container(
-                                          decoration: const BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: Colors.black54,
-                                          ),
-                                          padding: const EdgeInsets.all(4),
-                                          child: const Icon(
-                                            Icons.close,
-                                            size: 14,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                          ),
-
-                        const SizedBox(height: 20),
-
-                        /// BUTTON SUBMIT
-                        SizedBox(
-                          width: double.infinity,
-                          height: 52,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: red,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                            ),
-                            onPressed: _submit,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  _submitting
-                                      ? Icons.hourglass_top_rounded
-                                      : Icons.send_rounded,
-                                  size: 18,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  _submitting
-                                      ? "Mengirim..."
-                                      : "Kirim Pengaduan",
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+                if (_photos.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 104,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _photos.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        return _PhotoPreview(
+                          bytes: _photoBytes[index],
+                          onRemove: () {
+                            setState(() {
+                              _photos.removeAt(index);
+                              _photoBytes.removeAt(index);
+                            });
+                          },
+                        );
+                      },
                     ),
                   ),
-                ),
+                ] else ...[
+                  const SizedBox(height: 10),
+                  const _InfoStrip(
+                    text:
+                        'Tambahkan foto agar staff lebih mudah memahami kondisi.',
+                  ),
+                ],
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration({required String hint, IconData? icon}) {
+    return InputDecoration(
+      hintText: hint,
+      prefixIcon: icon == null ? null : Icon(icon, size: 20),
+      filled: true,
+      fillColor: const Color(0xFFF9FAFB),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF991B1B), width: 1.4),
+      ),
+    );
+  }
+}
+
+class _IntroPanel extends StatelessWidget {
+  final Color red;
+
+  const _IntroPanel({required this.red});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEE2E2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.campaign_outlined, color: red),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Isi laporan dengan singkat dan jelas. Foto pendukung akan membantu proses verifikasi.',
+              style: TextStyle(
+                fontSize: 13,
+                height: 1.45,
+                color: Color(0xFF4B5563),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _inputWrapper({required Widget child}) {
+class _FormSection extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Widget? trailing;
+  final List<Widget> children;
+
+  const _FormSection({
+    required this.title,
+    required this.icon,
+    required this.children,
+    this.trailing,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      child: child,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: const Color(0xFF991B1B)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ),
+              ?trailing,
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...children,
+        ],
+      ),
     );
   }
+}
 
-  Widget _buttonOutline({
-    required IconData icon,
-    required String text,
-    required VoidCallback onTap,
-  }) {
+class _FieldLabel extends StatelessWidget {
+  final String label;
+  final String? helper;
+  final Widget child;
+
+  const _FieldLabel({required this.label, required this.child, this.helper});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF374151),
+          ),
+        ),
+        if (helper != null) ...[
+          const SizedBox(height: 3),
+          Text(
+            helper!,
+            style: const TextStyle(fontSize: 11, color: Colors.black45),
+          ),
+        ],
+        const SizedBox(height: 7),
+        child,
+      ],
+    );
+  }
+}
+
+class _InfoStrip extends StatelessWidget {
+  final String text;
+
+  const _InfoStrip({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+      ),
+    );
+  }
+}
+
+class _PhotoActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _PhotoActionButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return OutlinedButton.icon(
       onPressed: onTap,
-      icon: Icon(icon),
-      label: Text(text),
+      icon: Icon(icon, size: 18),
+      label: Text(label),
       style: OutlinedButton.styleFrom(
-        side: const BorderSide(color: Color(0xFFCBD5E1)),
-        foregroundColor: const Color(0xFF0F172A),
-        backgroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        foregroundColor: const Color(0xFF111827),
+        side: const BorderSide(color: Color(0xFFD1D5DB)),
+        padding: const EdgeInsets.symmetric(vertical: 13),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
+}
 
-  Widget _sectionTitle({required IconData icon, required String title}) {
-    return Row(
+class _PhotoPreview extends StatelessWidget {
+  final Uint8List bytes;
+  final VoidCallback onRemove;
+
+  const _PhotoPreview({required this.bytes, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
       children: [
-        Container(
-          width: 28,
-          height: 28,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFEE2E2),
-            borderRadius: BorderRadius.circular(8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: Image.memory(
+            bytes,
+            width: 126,
+            height: 104,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              width: 126,
+              height: 104,
+              color: const Color(0xFFF3F4F6),
+              alignment: Alignment.center,
+              child: const Icon(Icons.broken_image_outlined),
+            ),
           ),
-          child: Icon(icon, size: 16, color: const Color(0xFF991B1B)),
         ),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        Positioned(
+          top: 6,
+          right: 6,
+          child: InkWell(
+            onTap: onRemove,
+            borderRadius: BorderRadius.circular(999),
+            child: Container(
+              padding: const EdgeInsets.all(5),
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.close, color: Colors.white, size: 14),
+            ),
+          ),
         ),
       ],
     );

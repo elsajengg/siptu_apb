@@ -11,6 +11,8 @@ class ReportSuccessPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final red = Colors.red.shade800;
+    final ticket = keptData['ticket'];
+    final roomDetail = keptData['room_detail'];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -40,20 +42,18 @@ class ReportSuccessPage extends StatelessWidget {
 
               // ── Message Part ──────────────────────────────────
               const Text(
-                'Laporan Terkirim!',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
+                'Pengaduan Berhasil Terkirim',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 8 * _phi),
-              const Text(
-                'Terima kasih telah berkontribusi menjaga fasilitas kampus. Tim kami akan segera menindaklanjuti laporan Anda.',
+              Text(
+                ticket == null || ticket.isEmpty
+                    ? 'Laporan Anda sudah masuk ke sistem dan menunggu verifikasi admin.'
+                    : 'Laporan Anda sudah masuk dengan nomor tiket $ticket dan menunggu verifikasi admin.',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.black54,
+                  color: Colors.grey.shade700,
                   height: 1.5,
                 ),
                 textAlign: TextAlign.center,
@@ -71,17 +71,23 @@ class ReportSuccessPage extends StatelessWidget {
                 child: Column(
                   children: [
                     _buildMiniRow(
-                      Icons.person_outline,
-                      keptData['nama'] ?? '-',
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8),
-                      child: Divider(height: 1),
-                    ),
-                    _buildMiniRow(
                       Icons.place_outlined,
                       keptData['location'] ?? '-',
                     ),
+                    if (roomDetail != null && roomDetail.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Divider(height: 1),
+                      ),
+                      _buildMiniRow(Icons.pin_drop_outlined, roomDetail),
+                    ],
+                    if (ticket != null && ticket.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Divider(height: 1),
+                      ),
+                      _buildMiniRow(Icons.confirmation_number_outlined, ticket),
+                    ],
                   ],
                 ),
               ),
@@ -134,7 +140,7 @@ class ReportSuccessPage extends StatelessWidget {
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 4,
-                    shadowColor: red.withOpacity(0.3),
+                    shadowColor: red.withValues(alpha: 0.3),
                   ),
                   child: const Text(
                     'Lapor Kerusakan Lain di Sini',

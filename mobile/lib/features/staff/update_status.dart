@@ -2,7 +2,6 @@ import 'dart:io' as io;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../data/task_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../data/api_service.dart';
 
@@ -39,10 +38,8 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
   bool _submitting = false;
 
   final List<String> _statuses = [
-    'Menunggu',
-    'Diproses',
+    'Progress',
     'Selesai',
-    'Terkendala',
   ];
 
   late String _currentTitle;
@@ -51,7 +48,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
   @override
   void initState() {
     super.initState();
-    _selectedStatus = widget.initialStatus ?? 'Diproses';
+    _selectedStatus = widget.initialStatus ?? 'Progress';
     _noteController = TextEditingController(text: widget.initialNote);
     _images = List<XFile>.from(widget.initialImages ?? []);
     _currentTitle = widget.taskTitle ?? 'Perbaikan AC Ruang 302';
@@ -131,30 +128,18 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                     label: 'ID Tiket',
                     value: widget.taskId ?? '#TGS-001',
                   ),
-                  _EditableInfoRow(
+                  _InfoRow(
                     label: 'Judul',
-                    initialValue: _currentTitle,
-                    onChanged: (val) => _currentTitle = val,
+                    value: _currentTitle,
                   ),
-                  _EditableInfoRow(
+                  _InfoRow(
                     label: 'Lokasi',
-                    initialValue: _currentLocation,
-                    onChanged: (val) => _currentLocation = val,
+                    value: _currentLocation,
                     isLast: true,
                   ),
                 ],
               ),
             ),
-
-            // Compact History Section
-            if (TaskService().completedTasks.any(
-              (t) => t.id == (widget.taskId ?? '#TGS-001'),
-            )) ...[
-              SizedBox(height: 12 * _phi),
-              _buildSectionTitle('Riwayat Pembaruan Terakhir'),
-              SizedBox(height: 8 * _phi),
-              _buildCompactHistoryList(),
-            ],
 
             SizedBox(height: 20 * _phi),
 
@@ -298,7 +283,7 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
                   ),
                 ),
                 child: const Text(
-                  'Kirim Deskripsi Perbaikan',
+                  'Kirim Update Tugas',
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -337,8 +322,6 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
       taskId: widget.taskDatabaseId!,
       status: _selectedStatus == 'Selesai'
           ? 'resolved'
-          : _selectedStatus == 'Terkendala'
-          ? 'blocked'
           : 'on_progress',
       notes: _noteController.text.trim(),
       photos: _images,
@@ -351,60 +334,6 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
       ),
     );
     if (result['success'] == true) Navigator.pop(context, true);
-  }
-
-  Widget _buildCompactHistoryList() {
-    final updates = TaskService().completedTasks
-        .where((t) => t.id == (widget.taskId ?? '#TGS-001'))
-        .take(3) // Show only last 3 for brevity in update screen
-        .toList();
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade100),
-      ),
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: updates.length,
-        separatorBuilder: (_, _) => const Divider(height: 16, thickness: 0.5),
-        itemBuilder: (context, index) {
-          final update = updates[index];
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    update.status,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red.shade800,
-                    ),
-                  ),
-                  Text(
-                    update.date,
-                    style: const TextStyle(fontSize: 10, color: Colors.black26),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              Text(
-                update.note.isEmpty ? '(Tanpa catatan)' : update.note,
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          );
-        },
-      ),
-    );
   }
 
   Widget _buildSectionTitle(String title) {
@@ -499,7 +428,6 @@ class _UpdateStatusPageState extends State<UpdateStatusPage> {
     );
   }
 }
-
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
@@ -523,153 +451,23 @@ class _InfoRow extends StatelessWidget {
                 label,
                 style: const TextStyle(color: Colors.black54, fontSize: 13),
               ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 13,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  value,
+                  textAlign: TextAlign.right,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ],
           ),
         ),
         if (!isLast) const Divider(height: 1),
-      ],
-    );
-  }
-}
-
-class _EditableInfoRow extends StatefulWidget {
-  final String label;
-  final String initialValue;
-  final ValueChanged<String> onChanged;
-  final bool isLast;
-
-  const _EditableInfoRow({
-    required this.label,
-    required this.initialValue,
-    required this.onChanged,
-    this.isLast = false,
-  });
-
-  @override
-  State<_EditableInfoRow> createState() => _EditableInfoRowState();
-}
-
-class _EditableInfoRowState extends State<_EditableInfoRow> {
-  bool _isEditing = false;
-  late TextEditingController _controller;
-  final FocusNode _focusNode = FocusNode();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus && _isEditing) {
-        setState(() {
-          _isEditing = false;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                widget.label,
-                style: const TextStyle(color: Colors.black54, fontSize: 13),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _isEditing
-                    ? TextFormField(
-                        controller: _controller,
-                        focusNode: _focusNode,
-                        onChanged: widget.onChanged,
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                          color: Colors.black87,
-                        ),
-                        decoration: InputDecoration(
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 4,
-                          ),
-                          border: const UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.black12,
-                              width: 1,
-                            ),
-                          ),
-                          enabledBorder: const UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.black12,
-                              width: 1,
-                            ),
-                          ),
-                          focusedBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Colors.red,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                      )
-                    : GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _isEditing = true;
-                          });
-                          _focusNode.requestFocus();
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                _controller.text,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
-                                  color: Colors.black87,
-                                ),
-                                textAlign: TextAlign.right,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            const Icon(
-                              Icons.edit,
-                              size: 14,
-                              color: Colors.black38,
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
-            ],
-          ),
-        ),
-        if (!widget.isLast) const Divider(height: 1),
       ],
     );
   }

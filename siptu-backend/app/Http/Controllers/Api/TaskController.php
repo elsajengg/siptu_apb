@@ -51,6 +51,12 @@ class TaskController extends Controller
     {
         abort_unless($task->staff_id === $request->user()->id, 403);
 
+        if ($task->status === 'resolved' || $task->report->status === 'resolved') {
+            return response()->json([
+                'message' => 'Tugas sudah selesai dan tidak dapat diperbarui lagi.',
+            ], 422);
+        }
+
         $data = $request->validate([
             'status' => ['required', Rule::in(['on_progress', 'blocked', 'resolved'])],
             'notes' => ['required', 'string', 'max:5000'],

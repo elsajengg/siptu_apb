@@ -17,6 +17,7 @@ class Report extends Model
         'title',
         'description',
         'location',
+        'room_detail',
         'category',
         'photo_path',
         'status',

@@ -28,6 +28,8 @@ class _CompletedTasksPageState extends State<CompletedTasksPage> {
         final task = Map<String, dynamic>.from(item as Map);
         final report = Map<String, dynamic>.from(task['report'] as Map? ?? {});
         return {
+          'databaseId': task['id'],
+          ...task,
           'id': task['task_number']?.toString() ?? '-',
           'title': report['title']?.toString() ?? '-',
           'location': report['location']?.toString() ?? '-',
@@ -124,8 +126,6 @@ class _CompletedTaskTile extends StatelessWidget {
             MaterialPageRoute(
               builder: (context) => TaskDetailPage(
                 task: task,
-                localImages: task['localImages'],
-                customNote: task['note'],
               ),
             ),
           );

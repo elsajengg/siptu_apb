@@ -114,8 +114,6 @@ class TaskSuccessPage extends StatelessWidget {
                             'status': newStatus,
                             'location': 'Lokasi Terlampir',
                           },
-                          localImages: images,
-                          customNote: note,
                         ),
                       ),
                     );

@@ -23,7 +23,14 @@ class ReportController extends Controller
     public function feed(Request $request): JsonResponse
     {
         $query = Report::query()
-            ->with(['user:id,name', 'facility.room', 'photos', 'task.staff:id,name,nip'])
+            ->with([
+                'user:id,name',
+                'facility.room',
+                'photos',
+                'task.staff:id,name,nip',
+                'task.updates.author:id,name',
+                'task.updates.photos',
+            ])
             ->latest()
             ->limit(min($request->integer('per_page', 30), 50));
 
@@ -41,6 +48,8 @@ class ReportController extends Controller
             'facility.room',
             'photos',
             'task.staff:id,name,nip',
+            'task.updates.author:id,name',
+            'task.updates.photos',
         ]);
 
         if ($request->user()->role === 'user') {
@@ -66,6 +75,7 @@ class ReportController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string', 'max:5000'],
             'location' => ['required', 'string', 'max:255'],
+            'room_detail' => ['nullable', 'string', 'max:255'],
             'photos' => ['nullable', 'array', 'max:5'],
             'photos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
@@ -130,7 +140,7 @@ class ReportController extends Controller
         return response()->json(['data' => $report]);
     }
 
-    public function like(Request $request, Report $report): JsonResponse
+    public function like(Request $request, Report $report, UserNotifier $notifier): JsonResponse
     {
         $userId = $request->user()->id;
         $existing = DB::table('report_likes')
@@ -157,6 +167,20 @@ class ReportController extends Controller
         }
 
         $report->refresh();
+
+        if ($liked && $report->user_id !== $userId) {
+            $notifier->send(
+                $report->user,
+                'report.liked',
+                'Dukungan baru',
+                "{$request->user()->name} memberi dukungan pada {$report->ticket_number}.",
+                [
+                    'report_id' => $report->id,
+                    'ticket_number' => $report->ticket_number,
+                    'likes_count' => $report->likes_count,
+                ],
+            );
+        }
 
         return response()->json([
             'liked' => $liked,

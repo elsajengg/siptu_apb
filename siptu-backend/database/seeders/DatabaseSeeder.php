@@ -57,64 +57,58 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
-        $roomA = Room::updateOrCreate(
-            ['building_name' => 'Gedung SBS', 'room_name' => 'Lab CyberSecurity'],
-        );
-        $roomB = Room::updateOrCreate(
-            ['building_name' => 'Gedung Utama', 'room_name' => 'Ruang Sidang Utama'],
-        );
-        $roomC = Room::updateOrCreate(
-            ['building_name' => 'Gedung SBS', 'room_name' => 'Lab Programming'],
-        );
-        $roomD = Room::updateOrCreate(
-            ['building_name' => 'Gedung Utama', 'room_name' => 'Koridor Timur Lantai 3'],
-        );
+        $rooms = [];
+        foreach ([
+            ['key' => 'sbs_lab_cyber', 'building' => 'Gedung SBS', 'room' => 'Lab CyberSecurity'],
+            ['key' => 'sbs_lab_programming', 'building' => 'Gedung SBS', 'room' => 'Lab Programming'],
+            ['key' => 'sbs_kelas_201', 'building' => 'Gedung SBS', 'room' => 'Ruang Kelas 201'],
+            ['key' => 'sbs_kamar_mandi_1', 'building' => 'Gedung SBS', 'room' => 'Kamar Mandi Lantai 1'],
+            ['key' => 'sbs_kamar_mandi_2', 'building' => 'Gedung SBS', 'room' => 'Kamar Mandi Lantai 2'],
+            ['key' => 'utama_sidang', 'building' => 'Gedung Utama', 'room' => 'Ruang Sidang Utama'],
+            ['key' => 'utama_koridor_3', 'building' => 'Gedung Utama', 'room' => 'Koridor Timur Lantai 3'],
+            ['key' => 'utama_kamar_mandi_3', 'building' => 'Gedung Utama', 'room' => 'Kamar Mandi Lantai 3'],
+        ] as $roomSeed) {
+            $rooms[$roomSeed['key']] = Room::updateOrCreate([
+                'building_name' => $roomSeed['building'],
+                'room_name' => $roomSeed['room'],
+            ]);
+        }
 
-        $airConditioner = Facility::updateOrCreate(
-            ['code' => 'AC-A-204'],
-            [
-                'room_id' => $roomA->id,
-                'name' => 'AC Ruang 204',
-                'category' => 'Kenyamanan Ruangan',
-                'status' => 'active',
-            ],
-        );
-        $lamp = Facility::updateOrCreate(
-            ['code' => 'LMP-B-3E'],
-            [
-                'room_id' => $roomB->id,
-                'name' => 'Lampu Koridor Timur',
-                'category' => 'Penerangan',
-                'status' => 'active',
-            ],
-        );
-        $lamp = Facility::updateOrCreate(
-            ['code' => 'LMP-C-301'],
-            [
-                'room_id' => $roomC->id,
-                'name' => 'Lampu Ruang 301',
-                'category' => 'Penerangan',
-                'status' => 'active',
-            ],
-        );
-        $lamp = Facility::updateOrCreate(
-            ['code' => 'LMP-D-3E'],
-            [
-                'room_id' => $roomD->id,
-                'name' => 'Lampu Koridor Timur Lantai 3',
-                'category' => 'Penerangan',
-                'status' => 'active',
-            ],
-        );
+        $facilities = [];
+        foreach ([
+            ['key' => 'ac_lab_cyber', 'room' => 'sbs_lab_cyber', 'code' => 'SBS-CYB-AC', 'name' => 'AC Lab CyberSecurity', 'category' => 'Kenyamanan Ruangan'],
+            ['key' => 'pc_lab_cyber', 'room' => 'sbs_lab_cyber', 'code' => 'SBS-CYB-PC', 'name' => 'Komputer Lab CyberSecurity', 'category' => 'Perangkat Lab'],
+            ['key' => 'ac_lab_programming', 'room' => 'sbs_lab_programming', 'code' => 'SBS-PRG-AC', 'name' => 'AC Lab Programming', 'category' => 'Kenyamanan Ruangan'],
+            ['key' => 'proyektor_lab_programming', 'room' => 'sbs_lab_programming', 'code' => 'SBS-PRG-PRJ', 'name' => 'Proyektor Lab Programming', 'category' => 'Perangkat Pembelajaran'],
+            ['key' => 'kursi_kelas_201', 'room' => 'sbs_kelas_201', 'code' => 'SBS-201-KRS', 'name' => 'Meja dan Kursi Ruang 201', 'category' => 'Inventaris Kelas'],
+            ['key' => 'proyektor_kelas_201', 'room' => 'sbs_kelas_201', 'code' => 'SBS-201-PRJ', 'name' => 'Proyektor Ruang 201', 'category' => 'Perangkat Pembelajaran'],
+            ['key' => 'toilet_sbs_1', 'room' => 'sbs_kamar_mandi_1', 'code' => 'SBS-WC-1', 'name' => 'Kloset dan Wastafel Lantai 1', 'category' => 'Sanitasi'],
+            ['key' => 'toilet_sbs_2', 'room' => 'sbs_kamar_mandi_2', 'code' => 'SBS-WC-2', 'name' => 'Kloset dan Wastafel Lantai 2', 'category' => 'Sanitasi'],
+            ['key' => 'audio_sidang', 'room' => 'utama_sidang', 'code' => 'UTM-SDG-AUD', 'name' => 'Audio Ruang Sidang', 'category' => 'Audio Visual'],
+            ['key' => 'lampu_sidang', 'room' => 'utama_sidang', 'code' => 'UTM-SDG-LMP', 'name' => 'Lampu Ruang Sidang', 'category' => 'Penerangan'],
+            ['key' => 'lampu_koridor_3', 'room' => 'utama_koridor_3', 'code' => 'UTM-KOR-3-LMP', 'name' => 'Lampu Koridor Timur Lantai 3', 'category' => 'Penerangan'],
+            ['key' => 'toilet_utama_3', 'room' => 'utama_kamar_mandi_3', 'code' => 'UTM-WC-3', 'name' => 'Kloset dan Wastafel Lantai 3', 'category' => 'Sanitasi'],
+        ] as $facilitySeed) {
+            $facilities[$facilitySeed['key']] = Facility::updateOrCreate(
+                ['code' => $facilitySeed['code']],
+                [
+                    'room_id' => $rooms[$facilitySeed['room']]->id,
+                    'name' => $facilitySeed['name'],
+                    'category' => $facilitySeed['category'],
+                    'status' => 'active',
+                ],
+            );
+        }
 
         $assignedReport = Report::updateOrCreate(
             ['ticket_number' => 'TIK-20260614-001'],
             [
                 'user_id' => $elsa->id,
-                'facility_id' => $airConditioner->id,
+                'facility_id' => $facilities['ac_lab_cyber']->id,
                 'title' => 'AC Ruang 204 Tidak Dingin',
                 'description' => 'AC hanya mengeluarkan angin dan ruangan terasa panas.',
-                'location' => 'Gedung A, Ruang 204',
+                'location' => 'Gedung SBS, Lab CyberSecurity',
+                'room_detail' => 'Area depan dekat meja dosen',
                 'category' => 'Kenyamanan Ruangan',
                 'status' => 'on_progress',
             ],
@@ -143,10 +137,11 @@ class DatabaseSeeder extends Seeder
             ['ticket_number' => 'TIK-20260614-002'],
             [
                 'user_id' => $elsa->id,
-                'facility_id' => $lamp->id,
+                'facility_id' => $facilities['lampu_koridor_3']->id,
                 'title' => 'Lampu Koridor Gedung B Mati',
                 'description' => 'Koridor lantai tiga gelap pada malam hari.',
-                'location' => 'Gedung B, Lantai 3, Koridor Timur',
+                'location' => 'Gedung Utama, Koridor Timur Lantai 3',
+                'room_detail' => 'Dekat tangga sisi timur',
                 'category' => 'Penerangan',
                 'status' => 'pending',
             ],

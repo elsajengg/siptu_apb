@@ -103,6 +103,7 @@ class ApiService {
     required String title,
     required String description,
     required String location,
+    required String roomDetail,
     required List<XFile> photos,
   }) async {
     if (_token == null) {
@@ -116,7 +117,8 @@ class ApiService {
             ..fields['facility_id'] = facilityId.toString()
             ..fields['title'] = title
             ..fields['description'] = description
-            ..fields['location'] = location;
+            ..fields['location'] = location
+            ..fields['room_detail'] = roomDetail;
 
       for (final photo in photos) {
         request.files.add(
@@ -290,8 +292,14 @@ class ApiService {
   // ──────────────────────────────────────────
 
   static Future<Map<String, dynamic>> getTasks({String? status}) async {
-    final query = status == null ? '' : '?status=$status';
+    final query = status == null
+        ? '?per_page=50'
+        : '?status=$status&per_page=50';
     return _getPaginated('/tasks$query');
+  }
+
+  static Future<Map<String, dynamic>> getTask(int taskId) async {
+    return _get('/tasks/$taskId');
   }
 
   static Future<Map<String, dynamic>> updateTask({
@@ -428,10 +436,30 @@ class ApiService {
   // ──────────────────────────────────────────
 
   static String mediaUrl(String? path) {
-    if (path == null || path.isEmpty) return '';
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (path == null || path.trim().isEmpty) return '';
+    var cleanPath = path.trim().replaceAll('\\', '/');
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+      return cleanPath;
+    }
+
+    while (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
+    }
+    if (cleanPath.startsWith('storage/')) {
+      cleanPath = cleanPath.substring('storage/'.length);
+    }
+    if (cleanPath.startsWith('public/')) {
+      cleanPath = cleanPath.substring('public/'.length);
+    }
+
+    if (cleanPath.startsWith('report/')) {
+      cleanPath = cleanPath.replaceFirst('report/', 'reports/');
+    } else if (cleanPath.startsWith('task/')) {
+      cleanPath = cleanPath.replaceFirst('task/', 'tasks/');
+    }
+
     final apiUri = Uri.parse(baseUrl);
-    return '${apiUri.scheme}://${apiUri.authority}/storage/$path';
+    return '${apiUri.scheme}://${apiUri.authority}/storage/$cleanPath';
   }
 
   // ──────────────────────────────────────────
