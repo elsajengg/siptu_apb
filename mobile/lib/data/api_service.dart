@@ -459,7 +459,7 @@ class ApiService {
     }
 
     final apiUri = Uri.parse(baseUrl);
-    return '${apiUri.scheme}://${apiUri.authority}/storage/$cleanPath';
+    return '${apiUri.scheme}://${apiUri.authority}/api/image/$cleanPath';
   }
 
   // ──────────────────────────────────────────

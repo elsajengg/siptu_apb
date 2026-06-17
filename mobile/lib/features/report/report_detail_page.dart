@@ -175,7 +175,7 @@ class _PhotoCardState extends State<_PhotoCard> {
       child: Column(
         children: [
           AspectRatio(
-            aspectRatio: 16 / 9,
+            aspectRatio: 3 / 4,
             child: Stack(
               children: [
                 PageView.builder(

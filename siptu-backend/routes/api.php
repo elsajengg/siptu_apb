@@ -16,7 +16,7 @@ Route::post('/login', function (Request $request) {
         'password' => ['required', 'string'],
     ]);
 
-    if (! auth()->attempt($credentials)) {
+    if (!auth()->attempt($credentials)) {
         return response()->json(['message' => 'Email atau password salah'], 401);
     }
 
@@ -72,3 +72,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/devices', [NotificationController::class, 'registerDevice']);
     Route::delete('/devices', [NotificationController::class, 'unregisterDevice']);
 });
+
+Route::get('/image/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    if (!file_exists($fullPath)) {
+        return response()->json(['message' => 'Not found'], 404);
+    }
+    return response()->file($fullPath, [
+        'Access-Control-Allow-Origin' => '*',
+        'Content-Type' => mime_content_type($fullPath),
+    ]);
+})->where('path', '.*');
+
+Route::get('/image/{path}', function ($path) {
+    $fullPath = storage_path('app/public/' . $path);
+    if (!file_exists($fullPath)) {
+        return response()->json(['message' => 'Not found'], 404);
+    }
+    return response()->file($fullPath, [
+        'Access-Control-Allow-Origin' => '*',
+        'Content-Type' => mime_content_type($fullPath),
+    ]);
+})->where('path', '.*');
