@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../auth/login_page.dart';
 import 'completed_tasks_page.dart';
 import '../home/home_shell.dart';
+import 'package:provider/provider.dart';
+import '../staff/staff_home.dart';
 import 'widgets/profile_header_widget.dart';
 import '../../data/api_service.dart';
 
@@ -34,7 +36,7 @@ class _StaffProfilePageState extends State<StaffProfilePage> {
         elevation: 0,
         leading: IconButton(
           onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => const HomeShell()),
+            MaterialPageRoute(builder: (_) => const StaffHome()),
             (route) => false,
           ),
           icon: const Icon(Icons.arrow_back, color: Colors.white),
