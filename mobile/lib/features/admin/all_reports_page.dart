@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../data/api_service.dart';
 import '../../providers/report_provider.dart';
 
-// ── Model data laporan ────────────────────────────────────────
 class ReportData {
   final String id;
   final String title;
@@ -10,6 +9,8 @@ class ReportData {
   final String requester;
   final String update;
   final String status;
+  final String description;
+  final String staffUpdate;
 
   const ReportData({
     required this.id,
@@ -18,6 +19,8 @@ class ReportData {
     required this.requester,
     required this.update,
     required this.status,
+    this.description = '',
+    this.staffUpdate = '',
   });
 }
 
@@ -30,6 +33,14 @@ class AllReportsPage extends StatefulWidget {
 
 class _AllReportsPageState extends State<AllReportsPage> {
   final List<ReportData> _databaseReports = [];
+  String _selectedFilter = 'Semua';
+
+  final List<String> _filterOptions = [
+    'Semua',
+    'Menunggu',
+    'Diproses',
+    'Selesai',
+  ];
 
   @override
   void initState() {
@@ -49,130 +60,28 @@ class _AllReportsPageState extends State<AllReportsPage> {
             final user = Map<String, dynamic>.from(
               report['user'] as Map? ?? {},
             );
+            final taskUpdates = report['task']?['updates'] as List? ?? [];
+            final latestUpdate = taskUpdates.isNotEmpty
+                ? taskUpdates.last['notes']?.toString() ?? ''
+                : '';
             return ReportData(
               id: report['ticket_number']?.toString() ?? '-',
               title: report['title']?.toString() ?? '-',
-              category: report['category']?.toString() ?? '-',
+              category:
+                  report['facility']?['name']?.toString() ??
+                  report['category']?.toString() ??
+                  '-',
               requester: user['name']?.toString() ?? '-',
               update: report['created_at']?.toString() ?? '-',
               status: Report.statusLabel(report['status']?.toString()),
+              description: report['description']?.toString() ?? '',
+              staffUpdate: latestUpdate,
             );
           }),
         );
     });
   }
 
-  // Filter yang aktif
-  String _selectedFilter = 'Semua';
-
-  final List<String> _filterOptions = [
-    'Semua',
-    'Menunggu',
-    'Diproses',
-    'Selesai',
-  ];
-
-  // Data semua laporan (sesuaikan dengan data asli kamu nanti)
-  final List<ReportData> _allReports = const [
-    ReportData(
-      id: 'TIK-202604-001',
-      title: 'Lampu Koridor Gedung B Lantai 3 Mati',
-      category: 'Penerangan',
-      requester: 'mahasiswa_2023',
-      update: '06 Apr 2026 19:30',
-      status: 'Diproses',
-    ),
-    ReportData(
-      id: 'TIK-202604-002',
-      title: 'AC Ruang Kelas 204 Tidak Dingin',
-      category: 'Kenyamanan Ruangan',
-      requester: 'bima.putra',
-      update: '05 Apr 2026 09:15',
-      status: 'Menunggu',
-    ),
-    ReportData(
-      id: 'TIK-202604-003',
-      title: 'Kursi Rusak di Perpustakaan Utama',
-      category: 'Furnitur',
-      requester: 'salsa_19',
-      update: '03 Apr 2026 14:45',
-      status: 'Selesai',
-    ),
-    ReportData(
-      id: 'TIK-202604-004',
-      title: 'Keran Air Bocor di Toilet Lantai 1',
-      category: 'Sanitasi',
-      requester: 'agung.pratama',
-      update: '07 Apr 2026 08:10',
-      status: 'Diproses',
-    ),
-    ReportData(
-      id: 'TIK-202604-005',
-      title: 'Proyektor Ruang 305 Tidak Menyala',
-      category: 'Elektronik',
-      requester: 'dosen_ti',
-      update: '07 Apr 2026 10:00',
-      status: 'Menunggu',
-    ),
-    ReportData(
-      id: 'TIK-202604-006',
-      title: 'Toilet Lantai 2 Gedung A Tersumbat',
-      category: 'Sanitasi',
-      requester: 'budi_23',
-      update: '06 Apr 2026 13:20',
-      status: 'Menunggu',
-    ),
-    ReportData(
-      id: 'TIK-202604-007',
-      title: 'Lampu Parkiran Gedung C Mati',
-      category: 'Penerangan',
-      requester: 'siti.rahma',
-      update: '05 Apr 2026 18:45',
-      status: 'Selesai',
-    ),
-    ReportData(
-      id: 'TIK-202604-008',
-      title: 'Kaca Jendela Ruang 101 Retak',
-      category: 'Infrastruktur',
-      requester: 'andi.wijaya',
-      update: '04 Apr 2026 11:30',
-      status: 'Diproses',
-    ),
-    ReportData(
-      id: 'TIK-202604-009',
-      title: 'Stop Kontak Lab Komputer Rusak',
-      category: 'Elektronik',
-      requester: 'lab_komputer',
-      update: '03 Apr 2026 09:00',
-      status: 'Selesai',
-    ),
-    ReportData(
-      id: 'TIK-202604-010',
-      title: 'Pintu Kelas 203 Susah Dibuka',
-      category: 'Infrastruktur',
-      requester: 'rini.anggraini',
-      update: '02 Apr 2026 14:00',
-      status: 'Selesai',
-    ),
-    ReportData(
-      id: 'TIK-202604-011',
-      title: 'Wastafel Kantin Lantai 1 Mampet',
-      category: 'Sanitasi',
-      requester: 'kantin_01',
-      update: '01 Apr 2026 08:30',
-      status: 'Menunggu',
-    ),
-    ReportData(
-      id: 'TIK-202604-012',
-      title: 'Papan Tulis Ruang 305 Tidak Bisa Dihapus',
-      category: 'Furnitur',
-      requester: 'dosen_fisika',
-      update: '01 Apr 2026 07:55',
-      status: 'Diproses',
-    ),
-  ];
-
-  // Getter — return laporan sesuai filter aktif
   List<ReportData> get _filteredReports {
     if (_selectedFilter == 'Semua') return _databaseReports;
     return _databaseReports.where((r) => r.status == _selectedFilter).toList();
@@ -186,6 +95,8 @@ class _AllReportsPageState extends State<AllReportsPage> {
         return const Color(0xFFEAB308);
       case 'selesai':
         return const Color(0xFF16A34A);
+      case 'ditolak':
+        return Colors.red;
       default:
         return const Color(0xFF6B7280);
     }
@@ -199,9 +110,153 @@ class _AllReportsPageState extends State<AllReportsPage> {
         return Icons.sync_outlined;
       case 'selesai':
         return Icons.check_circle_outline;
+      case 'ditolak':
+        return Icons.cancel_outlined;
       default:
         return Icons.help_outline;
     }
+  }
+
+  void _showDetailDialog(ReportData report) {
+    final red = Colors.red.shade800;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        contentPadding: EdgeInsets.zero,
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.red.shade900, Colors.red.shade700],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(18),
+                    topRight: Radius.circular(18),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      report.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        report.status,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Body
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _DetailRow(
+                      icon: Icons.tag,
+                      label: 'ID Tiket',
+                      value: report.id,
+                    ),
+                    _DetailRow(
+                      icon: Icons.category_outlined,
+                      label: 'Kategori',
+                      value: report.category,
+                    ),
+                    _DetailRow(
+                      icon: Icons.person_outline,
+                      label: 'Pelapor',
+                      value: report.requester,
+                    ),
+                    _DetailRow(
+                      icon: Icons.access_time,
+                      label: 'Tanggal',
+                      value: report.update,
+                    ),
+                    const SizedBox(height: 12),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Deskripsi Laporan:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      report.description.isNotEmpty
+                          ? report.description
+                          : 'Tidak ada deskripsi',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (report.staffUpdate.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Update Staff:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.green,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        report.staffUpdate,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Tutup', style: TextStyle(color: red)),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -222,10 +277,15 @@ class _AllReportsPageState extends State<AllReportsPage> {
             fontSize: 18,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _loadReports,
+          ),
+        ],
       ),
       body: Column(
         children: [
-          // ── Banner info jumlah ────────────────────────────
           Container(
             width: double.infinity,
             margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -265,8 +325,6 @@ class _AllReportsPageState extends State<AllReportsPage> {
               ],
             ),
           ),
-
-          // ── Filter chips ──────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: SingleChildScrollView(
@@ -312,10 +370,7 @@ class _AllReportsPageState extends State<AllReportsPage> {
               ),
             ),
           ),
-
           const SizedBox(height: 8),
-
-          // ── List laporan ──────────────────────────────────
           Expanded(
             child: filtered.isEmpty
                 ? Center(
@@ -338,109 +393,150 @@ class _AllReportsPageState extends State<AllReportsPage> {
                       ],
                     ),
                   )
-                : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final r = filtered[index];
-                      final statusColor = _statusColor(r.status);
-                      final statusIcon = _statusIcon(r.status);
+                : RefreshIndicator(
+                    onRefresh: _loadReports,
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final r = filtered[index];
+                        final statusColor = _statusColor(r.status);
+                        final statusIcon = _statusIcon(r.status);
 
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 6,
-                              offset: Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          leading: CircleAvatar(
-                            backgroundColor: red.withOpacity(0.1),
-                            child: Text(
-                              '${index + 1}',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: red,
-                              ),
-                            ),
-                          ),
-                          title: Text(
-                            r.title,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 4),
-                              Text(
-                                '#${r.id} • ${r.category}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              Text(
-                                'Pelapor: ${r.requester}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.black45,
-                                ),
-                              ),
-                              Text(
-                                'Update: ${r.update}',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Colors.black38,
-                                ),
-                              ),
-                            ],
-                          ),
-                          trailing: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
+                        return GestureDetector(
+                          onTap: () => _showDetailDialog(r),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 10),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(statusIcon, size: 14, color: statusColor),
-                                const SizedBox(height: 2),
-                                Text(
-                                  r.status,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: statusColor,
-                                  ),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 3),
                                 ),
                               ],
                             ),
+                            child: ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              leading: CircleAvatar(
+                                backgroundColor: red.withOpacity(0.1),
+                                child: Text(
+                                  '${index + 1}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: red,
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                r.title,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '#${r.id} • ${r.category}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Pelapor: ${r.requester}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.black45,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Update: ${r.update}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.black38,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      statusIcon,
+                                      size: 14,
+                                      color: statusColor,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      r.status,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                        color: statusColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _DetailRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: Colors.black45),
+          const SizedBox(width: 6),
+          Text(
+            '$label: ',
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 13))),
         ],
       ),
     );

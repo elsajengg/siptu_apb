@@ -83,8 +83,12 @@ class _AdminDashboardState extends State<_AdminDashboard> {
 
   int get _total => _reports.length;
   int get _menunggu => _reports.where((r) => r['status'] == 'pending').length;
-  int get _diproses => _reports.where((r) => r['status'] == 'assigned').length;
-  int get _selesai => _reports.where((r) => r['status'] == 'done').length;
+  int get _diproses => _reports
+      .where((r) => r['status'] == 'assigned' || r['status'] == 'on_progress')
+      .length;
+  int get _selesai => _reports
+      .where((r) => r['status'] == 'done' || r['status'] == 'resolved')
+      .length;
 
   @override
   void initState() {

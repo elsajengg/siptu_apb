@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/api_service.dart';
+import 'export_page.dart';
 
 enum FilterDay { hariIni, kemarin, tujuhHari }
 
@@ -79,8 +80,9 @@ class _VerifyReportPageState extends State<VerifyReportPage>
       _filteredReports.where((r) => r['status'] == 'pending').toList();
   List<Map<String, dynamic>> get _acc =>
       _filteredReports.where((r) => r['status'] == 'assigned').toList();
-  List<Map<String, dynamic>> get _done =>
-      _filteredReports.where((r) => r['status'] == 'done').toList();
+  List<Map<String, dynamic>> get _done => _filteredReports
+      .where((r) => r['status'] == 'done' || r['status'] == 'resolved')
+      .toList();
   List<Map<String, dynamic>> get _reject =>
       _filteredReports.where((r) => r['status'] == 'rejected').toList();
 
@@ -374,7 +376,10 @@ class _VerifyReportPageState extends State<VerifyReportPage>
           ),
           IconButton(
             icon: const Icon(Icons.download_outlined, color: Colors.white),
-            onPressed: () {},
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ExportPage()),
+            ),
           ),
         ],
         bottom: TabBar(
@@ -567,6 +572,8 @@ class _VerifyReportPageState extends State<VerifyReportPage>
         return Colors.red;
       case 'done':
         return const Color(0xFF2563EB);
+      case 'resolved':
+        return const Color(0xFF2563EB);
       default:
         return const Color(0xFFF97316);
     }
@@ -579,6 +586,8 @@ class _VerifyReportPageState extends State<VerifyReportPage>
       case 'rejected':
         return 'Ditolak';
       case 'done':
+        return 'Selesai';
+      case 'resolved': // ← tambahkan ini
         return 'Selesai';
       default:
         return 'Pending';
