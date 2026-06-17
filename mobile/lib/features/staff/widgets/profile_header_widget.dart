@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 /// Widget header halaman Profil Staff.
-/// Berisi background merah + ClipPath melengkung, avatar melayang,
-/// tombol edit di pojok kanan atas, serta teks Nama, Jabatan, dan Badge NIP.
+/// Background merah LURUS (batas bawah horizontal datar),
+/// avatar besar overlap di tengah antara merah dan putih,
+/// tombol edit di pojok kanan atas.
 class ProfileHeaderWidget extends StatelessWidget {
   final String name;
   final String position;
@@ -17,8 +18,10 @@ class ProfileHeaderWidget extends StatelessWidget {
     required this.onEditTap,
   });
 
-  static const double _redHeight = 220.0;
-  static const double _avatarRadius = 52.0;
+  // Tinggi area merah (lurus, tanpa curve)
+  static const double _redHeight = 250.0;
+  // Radius avatar — setengahnya overlap ke merah, setengahnya ke bawah
+  static const double _avatarRadius = 72.0;
 
   @override
   Widget build(BuildContext context) {
@@ -26,45 +29,78 @@ class ProfileHeaderWidget extends StatelessWidget {
 
     return Column(
       children: [
-        // ── Stack: Background merah + Avatar melayang ──────────────
+        // ── Stack: merah lurus + edit button + avatar overlap ──────
         SizedBox(
-          // Total tinggi = area merah + setengah avatar yang melayang keluar
-          height: _redHeight + _avatarRadius,
+          height: _redHeight + _avatarRadius, // ruang untuk overlap avatar
           child: Stack(
             clipBehavior: Clip.none,
             children: [
-              // 1. Background merah dengan ClipPath lengkung bawah
-              ClipPath(
-                clipper: _CurvedBottomClipper(),
+              // 1. Background merah — Container kotak biasa, BATAS BAWAH LURUS
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
                 child: Container(
                   width: double.infinity,
                   height: _redHeight,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.red.shade900, red],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                  color: red,
+                  // Dekorasi transparan (hanya lingkaran), TANPA path kurva
+                  child: CustomPaint(
+                    painter: _CircleDecorPainter(),
                   ),
-                  child: _DecorativePainterLayer(redHeight: _redHeight),
                 ),
               ),
 
-              // 2. Tombol edit — pojok kanan atas area merah
+              // 2. Tombol edit — pojok kanan atas, di dalam area merah
               Positioned(
                 top: 16,
                 right: 20,
-                child: _EditButton(onTap: onEditTap),
+                child: GestureDetector(
+                  onTap: onEditTap,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                  ),
+                ),
               ),
 
-              // 3. Avatar — tepat di garis batas bawah background merah
-              //    Center horizontal, offset vertikal agar setengah di merah, setengah di putih
+              // 3. Avatar — overlap tepat di garis batas merah & putih
+              //    top = _redHeight - _avatarRadius → setengah di merah, setengah di bawah
               Positioned(
-                bottom: 0,
+                top: _redHeight - _avatarRadius,
                 left: 0,
                 right: 0,
                 child: Center(
-                  child: _ProfileAvatar(radius: _avatarRadius, red: red),
+                  child: Container(
+                    width: _avatarRadius * 2,
+                    height: _avatarRadius * 2,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.grey.shade100,
+                      border: Border.all(color: Colors.white, width: 5),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: CircleAvatar(
+                      radius: _avatarRadius,
+                      backgroundColor: Colors.grey.shade100,
+                      child: Icon(
+                        Icons.person,
+                        size: _avatarRadius * 1.15,
+                        color: red.withOpacity(0.35),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -108,64 +144,35 @@ class ProfileHeaderWidget extends StatelessWidget {
   }
 }
 
-// ── Sub-widgets ─────────────────────────────────────────────────────
+// ── Dekorasi hanya lingkaran-lingkaran transparan, TANPA path kurva ──
 
-class _EditButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _EditButton({required this.onTap});
+class _CircleDecorPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.06)
+      ..style = PaintingStyle.fill;
+
+    // Lingkaran kanan atas
+    canvas.drawCircle(
+      Offset(size.width * 0.78, size.height * 0.15),
+      size.width * 0.34,
+      paint,
+    );
+    // Lingkaran kiri bawah
+    canvas.drawCircle(
+      Offset(size.width * 0.06, size.height * 0.8),
+      size.width * 0.25,
+      paint,
+    );
+    // TIDAK ADA quadraticBezierTo atau path kurva di sini
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(9),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.2),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
-        ),
-        child: const Icon(Icons.edit_outlined, color: Colors.white, size: 18),
-      ),
-    );
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _ProfileAvatar extends StatelessWidget {
-  final double radius;
-  final Color red;
-  const _ProfileAvatar({required this.radius, required this.red});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: radius * 2,
-      height: radius * 2,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white,
-        border: Border.all(color: Colors.white, width: 4.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.14),
-            blurRadius: 20,
-            spreadRadius: 1,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: CircleAvatar(
-        radius: radius,
-        backgroundColor: Colors.grey.shade100,
-        child: Icon(
-          Icons.person,
-          size: radius * 1.1,
-          color: red.withOpacity(0.3),
-        ),
-      ),
-    );
-  }
-}
+// ── NIP Badge ────────────────────────────────────────────────────────
 
 class _NipBadge extends StatelessWidget {
   final String nip;
@@ -199,61 +206,4 @@ class _NipBadge extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DecorativePainterLayer extends StatelessWidget {
-  final double redHeight;
-  const _DecorativePainterLayer({required this.redHeight});
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(double.infinity, redHeight),
-      painter: _BannerPainter(),
-    );
-  }
-}
-
-/// ClipPath yang memotong bagian bawah container menjadi kurva lembut.
-class _CurvedBottomClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    final path = Path();
-    path.lineTo(0, size.height - 40);
-    path.quadraticBezierTo(
-      size.width / 2,
-      size.height + 30, // titik kontrol (kurva membuncit ke bawah)
-      size.width,
-      size.height - 40,
-    );
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
-class _BannerPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(0.06)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(
-      Offset(size.width * 0.78, size.height * 0.15),
-      size.width * 0.34,
-      paint,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.06, size.height * 0.8),
-      size.width * 0.25,
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
